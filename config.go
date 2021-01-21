@@ -1,16 +1,16 @@
 package main
 
 var (
-    Config *BumblebeeConfig
+	Config *BumblebeeConfig
 )
 
 type BumblebeeConfig struct {
-    S3BucketName string
-    NumOfTransformerWorkers int
+	S3BucketName            string
+	NumOfTransformerWorkers int
 }
 
-func InitConfig()  {
-    Config = &BumblebeeConfig{
-        NumOfTransformerWorkers: 2,
-    }
+func InitConfig() {
+	Config = &BumblebeeConfig{
+		NumOfTransformerWorkers: 2,
+	}
 }
