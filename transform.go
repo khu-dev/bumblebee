@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/nfnt/resize"
 	"path"
 	"strconv"
-	"strings"
-	"time"
 )
 
 var (
@@ -29,25 +26,33 @@ func (t *Transformer) Start() {
 		case thumbnailTask := <-t.ThumbnailTaskChan:
 			t.GenerateThumbnail(thumbnailTask)
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: thumbnailTask.BaseImageTask,
+				BaseImageTask: &BaseImageTask{
+					OriginalFileName: thumbnailTask.OriginalFileName,
+					HashedFileName: thumbnailTask.HashedFileName,
+					ImageData: thumbnailTask.ThumbnailImageData,
+				},
 				UploadPath:    "thumbnail",
 			}
 			t.UploadTaskChan <- uploadTask
 		case resizeTask := <-t.ResizeTaskChan:
 			t.Resize(resizeTask)
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: resizeTask.BaseImageTask,
+				BaseImageTask: &BaseImageTask{
+					OriginalFileName: resizeTask.OriginalFileName,
+					HashedFileName: resizeTask.HashedFileName,
+					ImageData: resizeTask.ResizedImageData,
+				},
 				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.MaxWidth)),
 			}
 			t.UploadTaskChan <- uploadTask
-		case <-time.After(1 * time.Second):
-			fmt.Println("Thumbnail timeout.")
-			select {
-			case resizeTask := <-ResizeTaskChan:
-				fmt.Println(resizeTask)
-			case <-time.After(3 * time.Second):
-				fmt.Println("Resize timeout.")
-			}
+		//case <-time.After(1 * time.Second):
+		//	log.Println("Thumbnail timeout.")
+		//	select {
+		//	case resizeTask := <-ResizeTaskChan:
+		//		fmt.Println(resizeTask)
+		//	case <-time.After(3 * time.Second):
+		//		log.Println("Resize timeout.")
+		//	}
 		case <-t.Quit:
 			loop = false
 		}
@@ -69,6 +74,3 @@ func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
 	task.ImageData = nil
 }
 
-func ParseImageFileName(fileName string) (pureName, extension string) {
-	return strings.Split(fileName, ".")[0], strings.Split(fileName, ".")[1]
-}
