@@ -161,18 +161,15 @@ func BenchmarkTransformer_Start(b *testing.B) {
 		log.Fatal(err)
 	}
 	file.Close()
-	numOfTask := 50
+	numOfTask := 100
 
 	for sizeOfWorkerPool := 1; sizeOfWorkerPool < 11; sizeOfWorkerPool += 2{
 		b.Run(fmt.Sprintf("%d_task_worker_pool_%d", numOfTask, sizeOfWorkerPool), func(b *testing.B) {
 		BeforeEachTransformTest(b)
 		defer AfterEachTransformTest(b)
-		go transformer.Start()
-		go transformer.Start()
-		go transformer.Start()
-		go transformer.Start()
-		go transformer.Start()
-
+		for i := 0; i < sizeOfWorkerPool; i++{
+			go transformer.Start()
+		}
 
 		go func() {
 			for i := 0; i < numOfTask; i++{
