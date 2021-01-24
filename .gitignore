@@ -4,6 +4,6 @@ test_data_*
 /* local에서 resize할 시 생기는 directory */
 resized
 thumbnail
-dev.yml
-dev.yaml
+config/
+!config/default.yml
 bumblebee
