@@ -29,6 +29,10 @@ jobs:
           key: go-build-cache-${{ hashFiles('go.sum') }}
 
       - name: Test and Build a binary
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUMBLEBEE_S3_UPLOAD_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUMBLEBEE_S3_UPLOAD_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-northeast-2
         run: |
           KHUMU_HOME=$(pwd) go test ./... -v
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bumblebee ./...
