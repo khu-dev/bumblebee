@@ -5,7 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
@@ -21,6 +21,10 @@ var (
 	uploadPathForTest string = "test_data_thumbnail"
 	bucketName string = "dev-khumu-disk"
 )
+
+func init(){
+	InitConfig()
+}
 
 func BeforeEachUploadTest_DiskUploader(tb testing.TB) {
 	uploaderQuit = make(chan interface{}, 100)
@@ -40,21 +44,15 @@ func AfterEachUploadTest_DiskUploader(tb testing.TB) {
 }
 
 func BeforeEachUploadTest_S3Uploader(tb testing.TB) {
-	uploaderQuit = make(chan interface{}, 100)
 	uploadTaskChan = make(chan *ImageUploadTask, 100)
+	uploaderQuit = make(chan interface{}, 100)
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
 			Region: aws.String("ap-northeast-2"),
 		},
 	})
 	assert.NoError(tb, err)
-	uploader = &S3Uploader{
-		UploadTaskChan: uploadTaskChan,
-		Quit:           uploaderQuit,
-		bucketName: bucketName,
-		sess: sess,
-		s3Uploader: s3manager.NewUploader(sess),
-	}
+	uploader = NewS3Uploader(uploadTaskChan, uploaderQuit, sess)
 }
 
 // S3의 테스트 데이터도 지운다.
@@ -101,7 +99,7 @@ func TestS3Uploader_Upload(t *testing.T) {
 	err := uploader.Upload(task)
 	assert.NoError(t, err)
 
-	resp, err := http.Get(fmt.Sprintf("https://dev-khumu-disk.s3.ap-northeast-2.amazonaws.com/%s/%s", task.UploadPath, task.HashedFileName))
+	resp, err := http.Get(fmt.Sprintf("%s%s/%s", viper.GetString("storage.aws.endpoint"), task.UploadPath, task.HashedFileName))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

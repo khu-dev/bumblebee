@@ -91,7 +91,8 @@ ok  	github.com/khu-dev/bumblebee	21.476s
 
 이미지를 리사이징 후 업로드해서 사용자들이 접근할 수 있게 해야하므로 정적 리소스들을 제공할 클라우드 인프라가 필요하다.
 
-AWS의 `S3` + `CloudFront` + `Route53`을 이용했다.
+AWS의 `S3` + `CloudFront` + `Route53`을 이용했다. 이미지 업로드에 대한 API의 도메인 네임은 다른 API와 동일하지만
+업로드한 이미지는 https://api.xxx.xxx가 아닌 https://storage.xxx.xxx를 루트로 사용한다.
 
 * S3 public bucket
 * CloudFront

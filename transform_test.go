@@ -22,12 +22,12 @@ var (
 
 func BeforeEachTransformTest(tb testing.TB) {
 	transformerQuit = make(chan interface{}, 100)
-	transformer = &Transformer{
-		ResizeTaskChan:    make(chan *ImageResizeTask, 100),
-		ThumbnailTaskChan: make(chan *ImageGenerateThumbnailTask, 100),
-		UploadTaskChan:    make(chan *ImageUploadTask, 100),
-		Quit:              transformerQuit,
-	}
+	transformer = NewTransformer(
+		make(chan *ImageResizeTask, 100),
+		make(chan *ImageGenerateThumbnailTask, 100),
+		make(chan *ImageUploadTask, 100),
+		transformerQuit,
+	)
 }
 
 func AfterEachTransformTest(tb testing.TB) {

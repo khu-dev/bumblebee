@@ -5,21 +5,25 @@ import (
     "errors"
     "fmt"
     "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/s3/s3manager"
+    "github.com/sirupsen/logrus"
+    "github.com/spf13/viper"
     "image/jpeg"
     "image/png"
     "log"
     "os"
     "path"
-    "github.com/aws/aws-sdk-go/aws/session"
 )
 
+var autoIncrementUploaderID = 0
 type Uploader interface {
     Start()
     Upload(task *ImageUploadTask) error
 }
 
 type S3Uploader struct {
+    ID int
     UploadTaskChan chan *ImageUploadTask
     Quit <-chan interface{}
     sess *session.Session
@@ -28,24 +32,42 @@ type S3Uploader struct {
 }
 
 type DiskUploader struct {
+    ID int
     UploadTaskChan chan *ImageUploadTask
     Quit           <-chan interface{} // 테스트 진행 시 Start를 끝내기 위함
+
+}
+
+func NewS3Uploader(taskChan chan *ImageUploadTask, quit chan interface{}, sess *session.Session) Uploader{
+    autoIncrementUploaderID++
+    return &S3Uploader{
+        ID: autoIncrementUploaderID,
+        UploadTaskChan: taskChan,
+        Quit: quit,
+        bucketName: viper.GetString("storage.aws.bucketName"),
+        sess: sess,
+        s3Uploader: s3manager.NewUploader(sess),
+    }
 }
 
 func (u S3Uploader) Start() {
+    logrus.Print("Started S3Uploader")
     for loop := true; loop; {
         select {
         case uploadTask := <-u.UploadTaskChan:
+            logrus.Println("Start uploading", uploadTask)
             u.Upload(uploadTask)
+            logrus.Println("Finish uploading", uploadTask)
         case <-u.Quit:
             loop = true
         }
     }
+    logrus.Print("Finished S3Uploader")
 }
 
 func (u S3Uploader) Upload(task *ImageUploadTask) error {
     body := bytes.NewBuffer([]byte{})
-    _, ext := ParseImageFileName(task.HashedFileName)
+    _, ext, _ := ParseImageFileName(task.HashedFileName)
 
     switch ext {
     case "png":
@@ -100,7 +122,7 @@ func (u *DiskUploader) Upload(task *ImageUploadTask) error {
         }
 
     }
-    _, ext := ParseImageFileName(fileName)
+    _, ext, _ := ParseImageFileName(fileName)
     switch ext {
     case "png":
         err := png.Encode(file, task.ImageData)

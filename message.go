@@ -30,3 +30,9 @@ type ImageUploadTask struct {
 	*BaseImageTask
 	UploadPath string
 }
+
+func InitTaskChannels(){
+	ResizeTaskChan = make(chan *ImageResizeTask)
+	ThumbnailTaskChan = make(chan *ImageGenerateThumbnailTask)
+	UploadTaskChan = make(chan *ImageUploadTask)
+}

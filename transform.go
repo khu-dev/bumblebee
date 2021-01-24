@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/nfnt/resize"
+	"github.com/sirupsen/logrus"
 	"path"
 	"strconv"
 )
@@ -9,21 +10,36 @@ import (
 var (
 	ThumbnailWidth  = 64
 	ThumbnailHeight = 64
+	autoIncrementTransformerID = 0
 )
 
 // 테스트 주도 개발시에 의존성 주입을 할 수 있도록하기 위해 Task chan을 field로도 넣음
 type Transformer struct {
+	ID int
 	ResizeTaskChan    chan *ImageResizeTask
 	ThumbnailTaskChan chan *ImageGenerateThumbnailTask
 	UploadTaskChan    chan *ImageUploadTask
 	Quit              <-chan interface{} // 테스트 진행 시 Start를 끝내기 위함
 }
 
+func NewTransformer(resizeChan chan *ImageResizeTask, thumbnailChan chan *ImageGenerateThumbnailTask, uploadChan chan *ImageUploadTask, quit chan interface{}) *Transformer{
+	autoIncrementTransformerID++
+	return &Transformer{
+		ID: autoIncrementTransformerID,
+		ResizeTaskChan: resizeChan,
+		ThumbnailTaskChan: thumbnailChan,
+		UploadTaskChan: uploadChan,
+		Quit: quit,
+	}
+}
+
 // transformer가 이미지 변환작업을 시작한다.
 func (t *Transformer) Start() {
+	logrus.Print("Started Transformer")
 	for loop := true; loop; {
 		select {
 		case thumbnailTask := <-t.ThumbnailTaskChan:
+			logrus.Println("ThumbnailTask", thumbnailTask)
 			t.GenerateThumbnail(thumbnailTask)
 			uploadTask := &ImageUploadTask{
 				BaseImageTask: &BaseImageTask{
@@ -34,7 +50,9 @@ func (t *Transformer) Start() {
 				UploadPath:    "thumbnail",
 			}
 			t.UploadTaskChan <- uploadTask
+			logrus.Println("Add UploadTask", uploadTask)
 		case resizeTask := <-t.ResizeTaskChan:
+			logrus.Println("ResizeTask", resizeTask)
 			t.Resize(resizeTask)
 			uploadTask := &ImageUploadTask{
 				BaseImageTask: &BaseImageTask{
@@ -45,19 +63,13 @@ func (t *Transformer) Start() {
 				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.MaxWidth)),
 			}
 			t.UploadTaskChan <- uploadTask
-		//case <-time.After(1 * time.Second):
-		//	log.Println("Thumbnail timeout.")
-		//	select {
-		//	case resizeTask := <-ResizeTaskChan:
-		//		fmt.Println(resizeTask)
-		//	case <-time.After(3 * time.Second):
-		//		log.Println("Resize timeout.")
-		//	}
+			logrus.Println("Add UploadTask", uploadTask)
 		case <-t.Quit:
 			loop = false
 		}
 
 	}
+	logrus.Print("Finished Transformer")
 }
 
 func (t *Transformer) Resize(task *ImageResizeTask) {

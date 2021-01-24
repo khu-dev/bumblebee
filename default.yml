@@ -1,0 +1,13 @@
+host: "0.0.0.0"
+port: 9001
+numOfTransformerWorkers: 3
+numOfUploaderWorkers: 1
+
+storage:
+  aws:
+    enabled: false
+    bucketName: dev-khumu-disk
+    endpoint: "https://storage.khumu.jinsu.me/"
+  disk:
+    enabled: true
+    rootPath: "./"
