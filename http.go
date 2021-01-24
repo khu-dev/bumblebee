@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"path"
 )
 
 func NewEcho() *echo.Echo{
@@ -84,13 +85,9 @@ func ImageUploadRequestHandler(c echo.Context) error{
         }
     }()
 	fmt.Println(viper.GetString("storage.aws.endpoint"))
-	return c.JSON(200, BaseResponse{
-		Data: SuccessfullyUploadedResponseData{
-			RootEndpoint: viper.GetString("storage.aws.endpoint"),
-			FileName: hashedFileName,
-		},
-	})
+	return c.JSON(200, GenerateSuccessfullyUploadedResponse(hashedFileName))
 }
+
 
 type BaseResponse struct{
     Data interface{} `json:"data"`
@@ -100,4 +97,17 @@ type BaseResponse struct{
 type SuccessfullyUploadedResponseData struct{
 	RootEndpoint string `json:"root_endpoint"`
 	FileName string `json:"file_name"`
+	ThumbnailURL string `json:"thumbnail_url"`
+}
+
+func GenerateSuccessfullyUploadedResponse (hashedFileName string)*BaseResponse{
+	rootEndpoint := viper.GetString("storage.aws.endpoint")
+	return &BaseResponse{
+		Data: SuccessfullyUploadedResponseData{
+			RootEndpoint: rootEndpoint,
+			FileName: hashedFileName,
+			ThumbnailURL: path.Join(rootEndpoint, "thumbnail", hashedFileName),
+		},
+	}
+
 }
