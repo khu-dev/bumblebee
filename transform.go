@@ -10,6 +10,8 @@ import (
 var (
 	ThumbnailWidth  = 64
 	ThumbnailHeight = 64
+	// 새로운 사이즈의 리사이징이 필요할 경우 이곳만 바꿔주면 된다.
+	ResizeSizes = []int{128, 256, 512, 1024, 2048}
 	autoIncrementTransformerID = 0
 )
 
@@ -75,10 +77,6 @@ func (t *Transformer) Start() {
 func (t *Transformer) Resize(task *ImageResizeTask) {
 	task.ResizedImageData = resize.Resize(uint(task.MaxWidth), uint(task.MaxHeight), task.ImageData, resize.Lanczos3)
 	task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
-	//_, imageExtensionName := ParseImageFileName(task.OriginalFileName)
-	//if imageExtensionName == "png"{
-	//    task.ImageData = resize.Resize(uint(task.MaxWidth), uint(task.MaxHeight), task.ImageData, resize.Lanczos3)
-	//}
 }
 
 func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {

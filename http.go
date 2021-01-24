@@ -65,25 +65,12 @@ func ImageUploadRequestHandler(c echo.Context) error{
         })
     }
 
-	go func() {
-		logrus.Print("try add thumbnail task")
-	    ThumbnailTaskChan <- &ImageGenerateThumbnailTask{
-	        BaseImageTask: &BaseImageTask{ImageData: imageData, OriginalFileName: inputFileName, HashedFileName: hashedFileName},
-        }
-        logrus.Print("add thumbnail task")
-	}()
+	DispatchMessages(&BaseImageTask{
+		ImageData: imageData,
+		OriginalFileName: inputFileName,
+		HashedFileName: hashedFileName,
+	})
 
-	go func(){
-	    for _, size := range []int{128, 256, 512, 1024}{
-	    	logrus.Print("try add resize task")
-	        ResizeTaskChan <- &ImageResizeTask{
-	            BaseImageTask: &BaseImageTask{ImageData: imageData, OriginalFileName: inputFileName, HashedFileName: hashedFileName},
-	            MaxWidth: size,
-	            MaxHeight: size,
-            }
-            logrus.Print("add resize task")
-        }
-    }()
 	fmt.Println(viper.GetString("storage.aws.endpoint"))
 	return c.JSON(200, GenerateSuccessfullyUploadedResponse(hashedFileName))
 }
