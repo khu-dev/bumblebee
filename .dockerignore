@@ -1,3 +1,5 @@
+/* .gitignore과 동일 */
+
 .idea
 /* test 진행 시에 사용되거나 생성될 수 있는 데이터 */
 test_data_*
