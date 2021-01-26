@@ -50,7 +50,7 @@ func ImageUploadRequestHandler(c echo.Context) error{
 	        "message": WrongImageFileNameErr.Error(),
         })
     }
-    hashedFileName := parsedName + "." + ext
+    hashedFileName := getHashedFileName(parsedName) + "." + ext
 	src, err := input.Open()
 	if err != nil {
 		return err

@@ -1,8 +1,12 @@
 package main
 
 import (
+    "crypto/sha256"
+    "encoding/hex"
     "errors"
+    "strconv"
     "strings"
+    "time"
 )
 
 var(
@@ -23,4 +27,14 @@ func ParseImageFileName(fileName string) (string, string, error) {
     }
 
 	return pureName, ext, nil
+}
+
+// extension이 포함되어있든 아니든 어차피 해싱할것이라 상관없음.
+// fileName과 시간을 이용해 해싱.
+func getHashedFileName(fileName string) string{
+    hash := sha256.New()
+    unixTimeStr := strconv.Itoa(int(time.Now().Unix()))
+    hash.Write([]byte(fileName))
+    md := hash.Sum([]byte(unixTimeStr))
+    return hex.EncodeToString([]byte(md))
 }
