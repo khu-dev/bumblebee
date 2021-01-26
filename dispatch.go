@@ -35,5 +35,6 @@ func DispatchMessages(baseImageTask *BaseImageTask){
 	        BaseImageTask: &base4OriginalUpload,
 	        UploadPath: "original",
         }
+        logrus.Print("Enqueued upload task")
     }()
 }

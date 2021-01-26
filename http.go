@@ -107,7 +107,6 @@ func GenerateSuccessfullyUploadedResponse (hashedFileName string)*BaseResponse{
 
 func ForceContentTypeMultipartFormDataMiddleware(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 	return func(context echo.Context) error {
-		logrus.Warn(context.Request().Header.Get("Content-Type"))
 		if !strings.HasPrefix(context.Request().Header.Get("Content-Type"), "multipart/form-data"){
 			resp := BaseResponse{Message: "Unsupported Content-Type. Please use multipart/form-data."}
 			logrus.Error(resp)

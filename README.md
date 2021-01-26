@@ -102,3 +102,11 @@ AWS의 `S3` + `CloudFront` + `Route53`을 이용했다. 이미지 업로드에 �
   * GoDaddy에서 구매한 도메인은 GCP의 CloudDNS의 NS에 연결되어있음.
   * Route53에서 storage.khumu.jinsu.me Hosted Zone 생성
   * GCP의 CloudDNS에서 Route53의 storage.khumu.jinsu.me Hosted Zone NS를 레코드로 추가
+  
+## 간단한 부하 테스트
+
+```bash
+$ for ((i=1;i<=100;i++)); 
+do curl -F 'image=@test_data_wallpaper.jpg' http://localhost:9001/api/images
+done
+```

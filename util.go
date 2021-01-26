@@ -34,7 +34,7 @@ func ParseImageFileName(fileName string) (string, string, error) {
 func getHashedFileName(fileName string) string{
     hash := sha256.New()
     unixTimeStr := strconv.Itoa(int(time.Now().Unix()))
-    hash.Write([]byte(fileName))
-    md := hash.Sum([]byte(unixTimeStr))
+    hash.Write([]byte(fileName + unixTimeStr))
+    md := hash.Sum(nil)
     return hex.EncodeToString([]byte(md))
 }
