@@ -66,13 +66,13 @@ func TestTransformer_Resize(t *testing.T) {
 		BaseImageTask: &BaseImageTask{
 			OriginalFileName: "google_logo.png",
 			ImageData:        imageData,
-		}, MaxWidth: 128, MaxHeight: 128,
+		}, ResizingWidth: 128,
 	}
 	transformer.Resize(imageResizeTask)
-	assert.Equal(t, 0, imageResizeTask.ResizedImageData.Bounds().Min.X)
-	assert.Equal(t, 0, imageResizeTask.ResizedImageData.Bounds().Min.Y)
-	assert.Equal(t, 128, imageResizeTask.ResizedImageData.Bounds().Max.X)
-	assert.Equal(t, 128, imageResizeTask.ResizedImageData.Bounds().Max.Y)
+	assert.Equal(t, 128, imageResizeTask.ResizedImageData.Bounds().Dx())
+	// test 이미지인 logo는 가로로 길고 세로는 짧음.
+	assert.Greater(t, 64, imageResizeTask.ResizedImageData.Bounds().Dy())
+	assert.Less(t, imageResizeTask.ResizedImageData.Bounds().Dy(), 128)
 }
 
 func TestTransformer_GenerateThumbnail(t *testing.T) {
@@ -88,10 +88,7 @@ func TestTransformer_GenerateThumbnail(t *testing.T) {
 		},
 	}
 	transformer.GenerateThumbnail(imageThumbnailTask)
-	assert.Equal(t, 0, imageThumbnailTask.ThumbnailImageData.Bounds().Min.X)
-	assert.Equal(t, 0, imageThumbnailTask.ThumbnailImageData.Bounds().Min.Y)
-	assert.Equal(t, ThumbnailWidth, imageThumbnailTask.ThumbnailImageData.Bounds().Max.X)
-	assert.Equal(t, ThumbnailHeight, imageThumbnailTask.ThumbnailImageData.Bounds().Max.Y)
+	assert.Equal(t, ThumbnailWidth, imageThumbnailTask.ThumbnailImageData.Bounds().Dx())
 }
 
 func TestTransformer_Start(t *testing.T) {
@@ -123,7 +120,7 @@ func TestTransformer_Start(t *testing.T) {
 			BaseImageTask: &BaseImageTask{
 				OriginalFileName: "google_logo.png",
 				ImageData:        imageData,
-			}, MaxWidth: 128, MaxHeight: 128,
+			}, ResizingWidth: 128,
 		}
 		select {
 		case <-transformer.UploadTaskChan:
@@ -136,7 +133,8 @@ func TestTransformer_Start(t *testing.T) {
 
 // concurrent benchmark를 위한 것
 func (t *Transformer) resizeBenchmarkConcurrent(task *ImageResizeTask) {
-	task.ResizedImageData = resize.Resize(uint(task.MaxWidth), uint(task.MaxHeight), task.ImageData, resize.Lanczos3)
+	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
+	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 	task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
 	t.UploadTaskChan <- &ImageUploadTask{
 		BaseImageTask: &BaseImageTask{
@@ -177,7 +175,7 @@ func BenchmarkTransformer_Start(b *testing.B) {
 					BaseImageTask: &BaseImageTask{
 						OriginalFileName: "google_logo.png",
 						ImageData:        imageData,
-					}, MaxWidth: 128, MaxHeight: 128,
+					}, ResizingWidth: 128,
 				}
 			}
 		}()
@@ -200,7 +198,7 @@ func BenchmarkTransformer_Start(b *testing.B) {
 					BaseImageTask: &BaseImageTask{
 						OriginalFileName: "google_logo.png",
 						ImageData:        imageData,
-					}, MaxWidth: 128, MaxHeight: 128,
+					}, ResizingWidth: 128,
 				}
 			}
 		}()

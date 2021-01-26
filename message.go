@@ -16,8 +16,8 @@ type BaseImageTask struct {
 
 type ImageResizeTask struct {
 	*BaseImageTask
-	MaxWidth         int
-	MaxHeight        int
+	ResizingWidth         int
+	//MaxHeight        int // Height는 Width에 따라 정함.
 	ResizedImageData image.Image
 }
 

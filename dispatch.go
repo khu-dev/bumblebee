@@ -23,8 +23,7 @@ func DispatchMessages(baseImageTask *BaseImageTask){
 	    	base4Resize := *baseImageTask
 	        ResizeTaskChan <- &ImageResizeTask{
 	            BaseImageTask: &base4Resize,
-	            MaxWidth: size,
-	            MaxHeight: size,
+	            ResizingWidth: size,
             }
             logrus.Print("Enqueued resize task")
         }

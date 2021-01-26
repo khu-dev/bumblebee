@@ -16,7 +16,7 @@ func TestParseImageFileName(t *testing.T) {
         &parseImageFileNameTestCase{
             originalFileName: "abc.jpg",
             parsedFileName: "abc",
-            extensionName: "jpg",
+            extensionName: "jpeg",
         },
         &parseImageFileNameTestCase{
             originalFileName: "abc.jpeg",
@@ -31,12 +31,12 @@ func TestParseImageFileName(t *testing.T) {
         &parseImageFileNameTestCase{
             originalFileName: "my.name.is.jinsu.jpg",
             parsedFileName: "my.name.is.jinsu",
-            extensionName: "jpg",
+            extensionName: "jpeg", // jpg는 사용하지 않음.
         },
         &parseImageFileNameTestCase{
             originalFileName: "my name is jinsu.jpg",
             parsedFileName: "my name is jinsu",
-            extensionName: "jpg",
+            extensionName: "jpeg",
         },
         &parseImageFileNameTestCase{
             originalFileName: ".bit",

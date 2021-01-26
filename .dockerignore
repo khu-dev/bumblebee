@@ -4,11 +4,18 @@
 .idea
 /* test 진행 시에 사용되거나 생성될 수 있는 데이터 */
 test_data_*
+
 /* local에서 resize할 시 생기는 directory */
+
 resized
 thumbnail
-config/
+original
+
+/* config 설정에서 dev.yml은 공개하지 않기 위함 */
+config
 !config/default.yml
+
+/* 빌드 시 실행될 수 있는 binary */
 bumblebee
 
 

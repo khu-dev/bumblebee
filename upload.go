@@ -3,7 +3,6 @@ package main
 import (
     "bytes"
     "errors"
-    "fmt"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -16,7 +15,10 @@ import (
     "path"
 )
 
-var autoIncrementUploaderID = 0
+var (
+    NilImageDataErr = errors.New("ImageData가 nil이기 때문에 업로드할 수 없습니다.")
+	autoIncrementUploaderID = 0
+)
 type Uploader interface {
     Start()
     Upload(task *ImageUploadTask) error
@@ -86,6 +88,7 @@ func (u S3Uploader) Upload(task *ImageUploadTask) error {
         Bucket: aws.String(u.bucketName),
         Body: body,
         Key: aws.String(path.Join(task.UploadPath, task.HashedFileName)),
+        ContentType: aws.String("image/" + ext),
     })
 
     if err != nil{
@@ -107,7 +110,10 @@ func (u *DiskUploader) Start() {
 }
 
 func (u *DiskUploader) Upload(task *ImageUploadTask) error {
-    fmt.Println("Uploading...", task)
+    logrus.Println("Uploading...", task)
+    if task.ImageData == nil{
+        return NilImageDataErr
+    }
     fileName := task.HashedFileName
     file, err := os.Create(path.Join(task.UploadPath, fileName))
     if err != nil {

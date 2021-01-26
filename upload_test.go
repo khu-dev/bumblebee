@@ -18,7 +18,7 @@ var (
 	uploader          Uploader
 	uploadTaskChan    chan *ImageUploadTask
 	uploaderQuit      chan interface{}
-	uploadPathForTest string = "test_data_thumbnail"
+	uploadPathForTest string = "test_data" // 주의. 이 패스는 수행 후 사라짐.
 	bucketName string = "dev-khumu-disk"
 )
 
@@ -33,6 +33,8 @@ func BeforeEachUploadTest_DiskUploader(tb testing.TB) {
 		UploadTaskChan: uploadTaskChan,
 		Quit:           uploaderQuit,
 	}
+	err := os.Mkdir(uploadPathForTest, 0755)
+	assert.NoError(tb, err)
 }
 
 func AfterEachUploadTest_DiskUploader(tb testing.TB) {

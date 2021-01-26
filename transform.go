@@ -8,10 +8,9 @@ import (
 )
 
 var (
-	ThumbnailWidth  = 64
-	ThumbnailHeight = 64
+	ThumbnailWidth  = 128
 	// 새로운 사이즈의 리사이징이 필요할 경우 이곳만 바꿔주면 된다.
-	ResizeSizes = []int{128, 256, 512, 1024, 2048}
+	ResizeSizes = []int{256, 1024}
 	autoIncrementTransformerID = 0
 )
 
@@ -55,14 +54,21 @@ func (t *Transformer) Start() {
 			logrus.Println("Add UploadTask", uploadTask)
 		case resizeTask := <-t.ResizeTaskChan:
 			logrus.Println("ResizeTask", resizeTask)
-			t.Resize(resizeTask)
+			if resizeTask.ResizingWidth < resizeTask.ImageData.Bounds().Dx(){
+				t.Resize(resizeTask)
+			}else{
+				// Resize 필요 없음.
+				resizeTask.ResizedImageData = resizeTask.ImageData
+				resizeTask.ImageData = nil
+			}
+
 			uploadTask := &ImageUploadTask{
 				BaseImageTask: &BaseImageTask{
 					OriginalFileName: resizeTask.OriginalFileName,
 					HashedFileName: resizeTask.HashedFileName,
 					ImageData: resizeTask.ResizedImageData,
 				},
-				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.MaxWidth)),
+				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.ResizingWidth)),
 			}
 			t.UploadTaskChan <- uploadTask
 			logrus.Println("Add UploadTask", uploadTask)
@@ -75,12 +81,26 @@ func (t *Transformer) Start() {
 }
 
 func (t *Transformer) Resize(task *ImageResizeTask) {
-	task.ResizedImageData = resize.Resize(uint(task.MaxWidth), uint(task.MaxHeight), task.ImageData, resize.Lanczos3)
+	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
+	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 	task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
 }
 
 func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
-	task.ThumbnailImageData = resize.Resize(uint(ThumbnailWidth), uint(ThumbnailHeight), task.ImageData, resize.Lanczos3)
+	w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
+	task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 	task.ImageData = nil
 }
 
+func (t *Transformer) getProperSizeBasedOnWidth(desiredWidth, originalW, originalH int) (uint, uint){
+	// resize 안해도 됨.
+	var width, height int
+	if desiredWidth > originalW{
+		width = originalW
+		height = originalW
+	} else{
+		width = desiredWidth
+		height = originalH * desiredWidth / originalW
+	}
+	return uint(width), uint(height)
+}
