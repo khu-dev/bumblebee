@@ -10,6 +10,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -77,7 +78,6 @@ func ImageUploadRequestHandler(c echo.Context) error{
 	return c.JSON(200, GenerateSuccessfullyUploadedResponse(hashedFileName))
 }
 
-
 type BaseResponse struct{
     Data interface{} `json:"data"`
     Message string `json:"message"`
@@ -87,6 +87,8 @@ type SuccessfullyUploadedResponseData struct{
 	RootEndpoint string `json:"root_endpoint"`
 	FileName string `json:"file_name"`
 	ThumbnailURL string `json:"thumbnail_url"`
+	Resized256URL string `json:"resized_256_url"`
+	Resized1024URL string `json:"resized_1024_url"`
 }
 
 func GenerateSuccessfullyUploadedResponse (hashedFileName string)*BaseResponse{
@@ -96,6 +98,8 @@ func GenerateSuccessfullyUploadedResponse (hashedFileName string)*BaseResponse{
 			RootEndpoint: rootEndpoint,
 			FileName: hashedFileName,
 			ThumbnailURL: path.Join(rootEndpoint, "thumbnail", hashedFileName),
+			Resized256URL: path.Join(rootEndpoint, "resized", strconv.Itoa(256), hashedFileName),
+			Resized1024URL: path.Join(rootEndpoint, "resized", strconv.Itoa(1024), hashedFileName),
 		},
 	}
 
