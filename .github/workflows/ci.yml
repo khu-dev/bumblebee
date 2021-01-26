@@ -68,7 +68,7 @@ jobs:
           path: 'khumu-devops'
 
       - name: Edit Kustomization.yaml
-        working-directory: khumu-devops/khumu-comment
+        working-directory: khumu-devops/bumblebee
         run: |
           kustomize version
           kustomize edit set image umi0410/bumblebee=umi0410/bumblebee:${{ github.run_id }}
