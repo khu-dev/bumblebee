@@ -10,12 +10,14 @@ import (
 	"image/jpeg"
 	"image/png"
 	"path"
+	"strings"
 )
 
 func NewEcho() *echo.Echo{
     e := echo.New()
-    g := e.Group("api")
     e.Pre(middleware.RemoveTrailingSlash())
+
+    g := e.Group("api")
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "${time_rfc3339} ${method} ${status} uri=${uri} latency=${latency}\n",
 		Skipper: func(context echo.Context) bool {
@@ -26,6 +28,17 @@ func NewEcho() *echo.Echo{
 			return false
 	  },
 	}))
+    e.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
+		return func(context echo.Context) error {
+			logrus.Warn(context.Request().Header.Get("Content-Type"))
+			if !strings.HasPrefix(context.Request().Header.Get("Content-Type"), "multipart/form-data"){
+				resp := BaseResponse{Message: "Unsupported Content-Type. Please use multipart/form-data."}
+				logrus.Error(resp)
+				return context.JSON(400, resp)
+			}
+			return handlerFunc(context)
+		}
+	})
 	e.GET("/healthz", func(c echo.Context) error { return c.String(200, "OK") })
     g.POST("/images", ImageUploadRequestHandler)
 
