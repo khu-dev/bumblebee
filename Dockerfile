@@ -6,4 +6,4 @@ WORKDIR /khumu
 COPY bumblebee /khumu/bumblebee
 ENV KHUMU_HOME /khumu
 ENV KHUMU_ENVIRONMENT DEV
-CMD ["./khumu/bumblebee"]
+CMD ["./bumblebee"]

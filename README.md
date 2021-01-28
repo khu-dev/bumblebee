@@ -16,9 +16,11 @@ bumblebee는 이미지 처리 시에 Fan-in Fan-out pattern을 사용하고 있�
 
 ## 사용된 Concurrency pattern에 대하여
 
-1. 간단히 말하자면 Fan-in Fan-out pattern을 사용 중. 사용자의 요청에 응답하는 N개의 goroutine이 1개의 이미지 리사이징 작업 channel에 메시지를 전달하고 이미지 리사이징 워커들인 M개의 goroutine들이 해당 channel에서 메시지를 꺼내어 작업한다.
-2. 리사이징 작업이 완료되면 업로드 작업 channel에 메시지를 전달한다.
-3. 업로드 워커인 L개의 goroutine들이 해당 channel에서 메시지를 꺼내어 작업한다.
+1. 간단히 말하자면 Fan-in Fan-out pattern을 사용 중. 
+2. 사용자의 요청에 응답하는 HttpHandling gorutine들(개수가 정해지지 않음)이 1개의 이미지 리사이징 작업 channel에 메시지를 전달
+3. 이미지 리사이징 워커들인 M개의 goroutine들이 해당 channel에서 메시지를 꺼내어 리사이징 작업
+4. 리사이징 작업이 완료되면 업로드 작업 channel에 메시지를 전달한다.
+5. 업로드 워커인 L개의 goroutine들이 해당 channel에서 메시지를 꺼내어 실제 업로드 작업을 하는 goroutine을 실행시킨다.
 
 이렇게 concurrency pattern을 이용할 때의 장점에 대해 알아보자.
 
@@ -38,7 +40,9 @@ Image 서버 하나를 하면서 App내의 메시지 전달을 위해 Kafka나 R
 
 일반적인 프로그래밍적 방식으로는 Resize 함수 호출 후 Upload 함수를 호출하면 간단하긴하다. 하지만 어딘가 Resize 호출 => Upload 호출을 관리하는 로직도 필요할 것이고 그곳에서 Resize나 Upload에 대한 에러 처리도 담당을 해야할 것이다. Resize 함수 내에 Upload 함수를 포함시킨다면 Resize 함수 내에서 Upload에 대한 에러 처리를 담당해야할 수도 있다.
 
-하지만 pipeline 혹은 fan-in fan-out 패턴을 이용하면 메시징 시스템을 이용할 때와 마찬가지로 한 작업은 메시지 전달만 시켜놓고 그 메시지가 어떻게 사용되는지, 올바르게 처리 됐는지는 알 필요가 없다. 따라서 에러 처리도 각자가 알아서하면 된다. Resize 함수는 Upload task라는 메시지만 upload task channel에 전송하면 되고 Upload는 누가 자기를 호출하는지 알 필요 없이 그냥 upload task channel에서 메시지(task)만 꺼내어 작업하면 된다.
+하지만 **pipeline 혹은 fan-in fan-out 패턴을 이용하면 메시징 시스템을 이용할 때와 마찬가지로 한 작업은 메시지 전달만 시켜놓고 그 뒤로 그 메시지가 어떻게 사용되는지는 알 필요 없다.** 따라서 에러 처리도 이후에 작업을 처리하는 각자가 알아서하면 된다. 예를 들어 Resize 함수는 리사이징 작업 완료 후 Upload task라는 메시지만 upload task channel에 전송하면 되고 Upload 과정에서 어떤 에러가 발생하든 그것은 Resize 함수의 관심 밖이다. Upload는 누가 자기를 호출하는지 알 필요 없이 그냥 upload task channel에서 메시지(task)만 꺼내어 작업하면 된다.
+
+단점 - 메시지 브로커 서비스와 달리 앱이 죽으면 메모리에 채널을 통해 저장 중이던 메시지가 소실된다.
 
 ## 리사이징 Worker pool Benchmark
 
@@ -77,13 +81,15 @@ ok  	github.com/khu-dev/bumblebee	21.476s
 
 ### 아쉬운 점
 
-이미지 리사이징 라이브러리의 코드를 까보자 이미 논리적 프로세서 개수만큼의 goroutine으로 작업하게 최적화가 되어있었고, 이미지 리사이징 작업이 생각보다 오래 걸리는 작업이 아니었다. 우리 쿠뮤가 애초에 이미지 업로드 요청이 많을 서비스는 아님에도 기술적 야망으로 인해 이미지 프로세싱 작업을 마이크로서비스로 분리해 동시성 패턴을 적용시켜보았다. 하지만 동시성을 이렇게 조절해볼까 저렇게 조절해볼까 했던 것에 비해 결과에는 큰 차이가 없었던 것 같아 조금 아쉽다.
+(2021.01.24) 이미지 리사이징 라이브러리의 코드를 까보니 이미 논리적 프로세서 개수만큼의 goroutine으로 작업하게 최적화가 되어있었고, 이미지 리사이징 작업이 생각보다 오래 걸리는 작업이 아니었다. 우리 쿠뮤가 애초에 이미지 업로드 요청이 많을 서비스는 아님에도 기술적 야망으로 인해 이미지 프로세싱 작업을 마이크로서비스로 분리해 동시성 패턴을 적용시켜보았다. 하지만 동시성을 이렇게 조절해볼까 저렇게 조절해볼까 했던 것에 비해 결과에는 큰 차이가 없었던 것 같아 조금 아쉽다.
 
 [당근마켓의 이미지 처리 관련 글](https://medium.com/daangn/lambda-edge%EB%A1%9C-%EA%B5%AC%ED%98%84%ED%95%98%EB%8A%94-on-the-fly-%EC%9D%B4%EB%AF%B8%EC%A7%80-%EB%A6%AC%EC%82%AC%EC%9D%B4%EC%A7%95-f4e5052d49f3)을 보면 2019.01 기준 하루 50만장의 이미지 업로드가 이뤄진다고했다. [당근마켓 이용자 변화](https://brunch.co.kr/@trendlite/12)를 보면 이때 기준으로 이용자가 약 2021년엔 4배 증가했을 것으로 예상된다. 그럼 약 200만장의 이미지가 업로드 된다고 가정, 자고 일하는 시간 제외 그 200만장의 이미지는 하루 24시간이 아니라 실질적으로 6시간정도 동안 업로드 된다고 가정하면 1분당 약 5500장 정도의 이미지가 업로드 되는 셈이라고 추정해볼 수 있겠다. 이런 대규모 서비스에서는 이미지 프로세싱 서버에서 작업을 Go의 채널과 고루틴을 이용한 동시성 패턴을 적용해 작업 큐처럼 수행하면 어느정도 이점이 있을 수 있을 것 같다. 추후에 쿠뮤에도 뭔가 고화질 이미지를 많이 업로드할 만한 서비스가 추가되면 좋겠다.
 
-## TDD
+(2021.01.28) 생각보다 고화질(약 5MB 이상) 이미지의 경우 리사이징 작업이 메모리와 CPU를 많이 잡아먹는 것으로 보인다. Python이나 Node.js에서 작업할 때는 자원 소모가 어떻게 될 지 궁금하다. 현재로서는 Go로 수행 중인 이 작업이 자원 소모 측면에서 효율적인지 알 수 있도록 해주는 비교군이 없다.
 
-* JUnit에서 아이디어를 얻어 BeforeEach, AfterEach 등을 정의함으로써 각 test case들 간의 의존성을 없앰.
+## Test code
+
+* JUnit에서 아이디어를 얻어 BeforeEach, AfterEach 등을 정의함으로써 **각 test case들 간의 의존성을 없앰**.
 * AfterEach에서 test 수행 후 업로드한 리사이징 된 이미지등을 지움으로써 깔끔하게 이용.
 * 개발을 하면서 결과 확인을 위해 매번 특정 함수를 실행하기 위한 커맨드나 단축키를 이용할 필요 없이 file watcher에서 test code를 실행하도록 설정해놓으면 되기 때문에 간편.
 
@@ -94,11 +100,11 @@ ok  	github.com/khu-dev/bumblebee	21.476s
 AWS의 `S3` + `CloudFront` + `Route53`을 이용했다. 이미지 업로드에 대한 API의 도메인 네임은 다른 API와 동일하지만
 업로드한 이미지는 https://api.xxx.xxx가 아닌 https://storage.xxx.xxx를 루트로 사용한다.
 
-* S3 public bucket
-* CloudFront
+* **S3 public bucket**
+* **CloudFront**
   * Origin - S3 public bucket
   * Alternative CNAME - 
-* Route53
+* **Route53**
   * GoDaddy에서 구매한 도메인은 GCP의 CloudDNS의 NS에 연결되어있음.
   * Route53에서 storage.khumu.jinsu.me Hosted Zone 생성
   * GCP의 CloudDNS에서 Route53의 storage.khumu.jinsu.me Hosted Zone NS를 레코드로 추가
@@ -110,3 +116,5 @@ $ for ((i=1;i<=100;i++));
 do curl -F 'image=@test_data_wallpaper.jpg' http://localhost:9001/api/images
 done
 ```
+
+로컬에서 서버 실행 후 위의 커맨드를 통해 작업을 요청하고 CPU, Memory 사용률을 관찰해본다.
