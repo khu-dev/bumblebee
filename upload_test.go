@@ -94,14 +94,14 @@ func TestS3Uploader_Upload(t *testing.T) {
 	imageData := DownloadSampleImage(t)
 	task := &ImageUploadTask{
 		BaseImageTask: &BaseImageTask{
-			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd.png",
+			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd", Extension: "png",
 		},
 		UploadPath: uploadPathForTest,
 	}
 	err := uploader.Upload(task)
 	assert.NoError(t, err)
 
-	resp, err := http.Get(fmt.Sprintf("%s%s/%s", viper.GetString("storage.aws.endpoint"), task.UploadPath, task.HashedFileName))
+	resp, err := http.Get(fmt.Sprintf("%s%s/%s", viper.GetString("storage.aws.endpoint"), task.UploadPath, task.HashedFileName + "." + task.Extension))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
