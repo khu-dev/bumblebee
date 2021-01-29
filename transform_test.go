@@ -1,15 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/nfnt/resize"
 	"github.com/stretchr/testify/assert"
 	"image"
-	"image/jpeg"
 	"image/png"
-	"log"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 )
@@ -135,7 +131,7 @@ func TestTransformer_Start(t *testing.T) {
 func (t *Transformer) resizeBenchmarkConcurrent(task *ImageResizeTask) {
 	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
 	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
-	task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
+	//task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
 	t.UploadTaskChan <- &ImageUploadTask{
 		BaseImageTask: &BaseImageTask{
 			OriginalFileName: task.OriginalFileName,
@@ -145,73 +141,73 @@ func (t *Transformer) resizeBenchmarkConcurrent(task *ImageResizeTask) {
 	}
 }
 
-func BenchmarkTransformer_Start(b *testing.B) {
-	//b.Run("리사이즈에", func(b *testing.B) {
-
-	file, err := os.Open("test_data_wallpaper.jpg")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// decode jpeg into image.Image
-	imageData, err := jpeg.Decode(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.Close()
-	numOfTask := 100
-
-	for sizeOfWorkerPool := 1; sizeOfWorkerPool < 11; sizeOfWorkerPool += 2{
-		b.Run(fmt.Sprintf("%d_task_worker_pool_%d", numOfTask, sizeOfWorkerPool), func(b *testing.B) {
-		BeforeEachTransformTest(b)
-		defer AfterEachTransformTest(b)
-		for i := 0; i < sizeOfWorkerPool; i++{
-			go transformer.Start()
-		}
-
-		go func() {
-			for i := 0; i < numOfTask; i++{
-				transformer.ResizeTaskChan <- &ImageResizeTask{
-					BaseImageTask: &BaseImageTask{
-						OriginalFileName: "google_logo.png",
-						ImageData:        imageData,
-					}, ResizingWidth: 128,
-				}
-			}
-		}()
-		finishedCNT := 0
-		for ; finishedCNT <numOfTask; finishedCNT++{
-			output := <-transformer.UploadTaskChan
-			assert.NotNil(b, output.ImageData)
-		}
-		transformerQuit <- struct{}{}
-	})
-
-	}
-
-	b.Run(fmt.Sprintf("%d_task_unlimited_concurrency", numOfTask), func(b *testing.B) {
-		BeforeEachTransformTest(b)
-		defer AfterEachTransformTest(b)
-		go func() {
-			for i := 0; i < numOfTask; i++{
-				transformer.ResizeTaskChan <- &ImageResizeTask{
-					BaseImageTask: &BaseImageTask{
-						OriginalFileName: "google_logo.png",
-						ImageData:        imageData,
-					}, ResizingWidth: 128,
-				}
-			}
-		}()
-
-		for rep := 0; rep < numOfTask; rep++{
-			task := <-transformer.ResizeTaskChan
-			go transformer.resizeBenchmarkConcurrent(task)
-		}
-
-		finishedCNT := 0
-		for finishedCNT = 0; finishedCNT < numOfTask; finishedCNT++{
-			<-transformer.UploadTaskChan
-		}
-		transformerQuit <- struct{}{}
-	})
-}
+//func BenchmarkTransformer_Start(b *testing.B) {
+//	//b.Run("리사이즈에", func(b *testing.B) {
+//
+//	file, err := os.Open("test_data_wallpaper.jpg")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// decode jpeg into image.Image
+//	imageData, err := jpeg.Decode(file)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	file.Close()
+//	numOfTask := 100
+//
+//	for sizeOfWorkerPool := 1; sizeOfWorkerPool < 11; sizeOfWorkerPool += 2{
+//		b.Run(fmt.Sprintf("%d_task_worker_pool_%d", numOfTask, sizeOfWorkerPool), func(b *testing.B) {
+//		BeforeEachTransformTest(b)
+//		defer AfterEachTransformTest(b)
+//		for i := 0; i < sizeOfWorkerPool; i++{
+//			go transformer.Start()
+//		}
+//
+//		go func() {
+//			for i := 0; i < numOfTask; i++{
+//				transformer.ResizeTaskChan <- &ImageResizeTask{
+//					BaseImageTask: &BaseImageTask{
+//						OriginalFileName: "google_logo.png",
+//						ImageData:        imageData,
+//					}, ResizingWidth: 128,
+//				}
+//			}
+//		}()
+//		finishedCNT := 0
+//		for ; finishedCNT <numOfTask; finishedCNT++{
+//			output := <-transformer.UploadTaskChan
+//			assert.NotNil(b, output.ImageData)
+//		}
+//		transformerQuit <- struct{}{}
+//	})
+//
+//	}
+//
+//	b.Run(fmt.Sprintf("%d_task_unlimited_concurrency", numOfTask), func(b *testing.B) {
+//		BeforeEachTransformTest(b)
+//		defer AfterEachTransformTest(b)
+//		go func() {
+//			for i := 0; i < numOfTask; i++{
+//				transformer.ResizeTaskChan <- &ImageResizeTask{
+//					BaseImageTask: &BaseImageTask{
+//						OriginalFileName: "google_logo.png",
+//						ImageData:        imageData,
+//					}, ResizingWidth: 128,
+//				}
+//			}
+//		}()
+//
+//		for rep := 0; rep < numOfTask; rep++{
+//			task := <-transformer.ResizeTaskChan
+//			go transformer.resizeBenchmarkConcurrent(task)
+//		}
+//
+//		finishedCNT := 0
+//		for finishedCNT = 0; finishedCNT < numOfTask; finishedCNT++{
+//			<-transformer.UploadTaskChan
+//		}
+//		transformerQuit <- struct{}{}
+//	})
+//}

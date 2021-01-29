@@ -43,11 +43,7 @@ func (t *Transformer) Start() {
 			logrus.Println("ThumbnailTask", thumbnailTask)
 			t.GenerateThumbnail(thumbnailTask)
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: &BaseImageTask{
-					OriginalFileName: thumbnailTask.OriginalFileName,
-					HashedFileName: thumbnailTask.HashedFileName,
-					ImageData: thumbnailTask.ThumbnailImageData,
-				},
+				BaseImageTask: thumbnailTask.BaseImageTask,
 				UploadPath:    "thumbnail",
 			}
 			t.UploadTaskChan <- uploadTask
@@ -59,15 +55,10 @@ func (t *Transformer) Start() {
 			}else{
 				// Resize 필요 없음.
 				resizeTask.ResizedImageData = resizeTask.ImageData
-				resizeTask.ImageData = nil
 			}
 
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: &BaseImageTask{
-					OriginalFileName: resizeTask.OriginalFileName,
-					HashedFileName: resizeTask.HashedFileName,
-					ImageData: resizeTask.ResizedImageData,
-				},
+				BaseImageTask: resizeTask.BaseImageTask,
 				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.ResizingWidth)),
 			}
 			t.UploadTaskChan <- uploadTask
@@ -83,13 +74,11 @@ func (t *Transformer) Start() {
 func (t *Transformer) Resize(task *ImageResizeTask) {
 	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
 	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
-	task.ImageData = nil // 이제 필요 없으니 지워줘서 GC가 처리할 수 있게 함.
 }
 
 func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
 	w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
 	task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
-	task.ImageData = nil
 }
 
 func (t *Transformer) getProperSizeBasedOnWidth(desiredWidth, originalW, originalH int) (uint, uint){

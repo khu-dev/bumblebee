@@ -9,9 +9,13 @@ var (
 )
 
 type BaseImageTask struct {
+	// 원본 파일 이름 전체 (e.g. abcde.jpeg)
 	OriginalFileName string
+	// OriginalFileName을 hasing한 이름 (e.g. a1b2c3d4e5)
 	HashedFileName   string
 	ImageData        image.Image
+	// 이미지 파일 확장자명 (e.g. jpeg, png)
+	Extension string
 }
 
 type ImageResizeTask struct {
