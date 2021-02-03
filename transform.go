@@ -43,7 +43,12 @@ func (t *Transformer) Start() {
 			logrus.Println("ThumbnailTask", thumbnailTask)
 			t.GenerateThumbnail(thumbnailTask)
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: thumbnailTask.BaseImageTask,
+				BaseImageTask: &BaseImageTask{
+					OriginalFileName: thumbnailTask.OriginalFileName,
+					HashedFileName: thumbnailTask.HashedFileName,
+					ImageData: thumbnailTask.ThumbnailImageData,
+					Extension: thumbnailTask.Extension,
+				},
 				UploadPath:    "thumbnail",
 			}
 			t.UploadTaskChan <- uploadTask
@@ -58,7 +63,12 @@ func (t *Transformer) Start() {
 			}
 
 			uploadTask := &ImageUploadTask{
-				BaseImageTask: resizeTask.BaseImageTask,
+				BaseImageTask: &BaseImageTask{
+					OriginalFileName: resizeTask.OriginalFileName,
+					HashedFileName: resizeTask.HashedFileName,
+					ImageData: resizeTask.ResizedImageData,
+					Extension: resizeTask.Extension,
+				},
 				UploadPath:    path.Join("resized", strconv.Itoa(resizeTask.ResizingWidth)),
 			}
 			t.UploadTaskChan <- uploadTask

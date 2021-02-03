@@ -114,7 +114,7 @@ func TestDiskUploader_Start(t *testing.T) {
 	go uploader.Start()
 	task := &ImageUploadTask{
 		BaseImageTask: &BaseImageTask{
-			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd.png",
+			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd",Extension: "png",
 		},
 		UploadPath: uploadPathForTest,
 	}
@@ -122,6 +122,6 @@ func TestDiskUploader_Start(t *testing.T) {
 	uploadTaskChan <- task
 	time.Sleep(time.Second * 3)
 	uploaderQuit <- struct{}{}
-	_, err := os.Stat(path.Join(uploadPathForTest, task.HashedFileName))
+	_, err := os.Stat(path.Join(uploadPathForTest, "abcd1234abcd.png"))
 	assert.NoError(t, err)
 }

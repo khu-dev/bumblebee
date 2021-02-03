@@ -114,12 +114,12 @@ func (u *DiskUploader) Upload(task *ImageUploadTask) error {
         logrus.Error(NilImageDataErr)
         return NilImageDataErr
     }
-    fileName := task.HashedFileName
-    file, err := os.Create(path.Join(task.UploadPath, fileName))
+
+    file, err := os.Create(path.Join(task.UploadPath, task.HashedFileName + "." + task.Extension))
     if err != nil {
         if errors.Is(err, os.ErrNotExist) {
             err := os.MkdirAll(task.UploadPath, 0755)
-            file, err = os.Create(path.Join(task.UploadPath, fileName))
+            file, err = os.Create(path.Join(task.UploadPath, task.HashedFileName + "." + task.Extension))
             if err != nil {
                 logrus.Error(err)
                 return err

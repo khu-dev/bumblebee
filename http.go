@@ -47,8 +47,15 @@ func ImageUploadRequestHandler(c echo.Context) error{
 	        "message": WrongImageFileNameErr.Error(),
         })
     }
-    hashedFileName := getHashedFileName(inputFileName)
-    logrus.Println("Hashed", inputFileName, "into", hashedFileName)
+    var hashedFileName string
+    if c.FormValue("hashing") == "false"{
+		splited := strings.Split(inputFileName, ".")
+		hashedFileName = strings.Join(splited[:len(splited)-1], ".")
+		logrus.Println("Omit hashing. not hashed name:", hashedFileName)
+	} else{
+    	hashedFileName = getHashedFileName(inputFileName)
+    	logrus.Println("Hashed", inputFileName, "into", hashedFileName)
+	}
 	src, err := input.Open()
 	if err != nil {
 		logrus.Error(err)
