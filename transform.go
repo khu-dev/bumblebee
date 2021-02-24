@@ -10,7 +10,7 @@ import (
 var (
 	ThumbnailWidth  = 128
 	// 새로운 사이즈의 리사이징이 필요할 경우 이곳만 바꿔주면 된다.
-	ResizeSizes = []int{256, 1024}
+	ResizeSizes = []int{256, 512, 1024}
 	autoIncrementTransformerID = 0
 )
 
