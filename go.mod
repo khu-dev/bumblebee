@@ -9,4 +9,5 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
+	github.com/umi0410/ezconfig v0.0.0-20210507141526-7b88a9928c2c
 )

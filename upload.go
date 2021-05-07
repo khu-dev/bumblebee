@@ -7,7 +7,6 @@ import (
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/s3/s3manager"
     "github.com/sirupsen/logrus"
-    "github.com/spf13/viper"
     "image/jpeg"
     "image/png"
     "log"
@@ -46,7 +45,7 @@ func NewS3Uploader(taskChan chan *ImageUploadTask, quit chan interface{}, sess *
         ID: autoIncrementUploaderID,
         UploadTaskChan: taskChan,
         Quit: quit,
-        bucketName: viper.GetString("storage.aws.bucketName"),
+        bucketName: Config.Storage.Aws.BucketName,
         sess: sess,
         s3Uploader: s3manager.NewUploader(sess),
     }

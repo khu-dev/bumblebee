@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"image"
 	"path"
 	"strconv"
@@ -90,7 +89,7 @@ type SuccessfullyUploadedResponseData struct{
 }
 
 func GenerateSuccessfullyUploadedResponse (fileFullName string)*BaseResponse{
-	rootEndpoint := viper.GetString("storage.aws.endpoint")
+	rootEndpoint := Config.Storage.Aws.Endpoint
 	return &BaseResponse{
 		Data: SuccessfullyUploadedResponseData{
 			RootEndpoint: rootEndpoint,

@@ -5,8 +5,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/umi0410/ezconfig"
 	"net/http"
 	"os"
 	"path"
@@ -23,7 +23,7 @@ var (
 )
 
 func init(){
-	InitConfig()
+	ezconfig.LoadConfig("KHUMU", Config, []string{"./config", os.Getenv("KHUMU_CONFIG_PATH")})
 }
 
 func BeforeEachUploadTest_DiskUploader(tb testing.TB) {
@@ -101,7 +101,7 @@ func TestS3Uploader_Upload(t *testing.T) {
 	err := uploader.Upload(task)
 	assert.NoError(t, err)
 
-	resp, err := http.Get(fmt.Sprintf("%s%s/%s", viper.GetString("storage.aws.endpoint"), task.UploadPath, task.HashedFileName + "." + task.Extension))
+	resp, err := http.Get(fmt.Sprintf("%s%s/%s", Config.Storage.Aws.Endpoint, task.UploadPath, task.HashedFileName + "." + task.Extension))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+	"github.com/umi0410/ezconfig"
 	"os"
 )
 
@@ -16,18 +16,18 @@ var (
 
 func init(){
 	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: false, ForceColors: true})
+	ezconfig.LoadConfig("KHUMU", Config, []string{"./config", os.Getenv("KHUMU_CONFIG_PATH")})
 }
 func main() {
 	logrus.Printf("KHUMU_ENVIRONMENT=%s", os.Getenv("KHUMU_ENVIRONMENT"))
-	InitConfig()
 	InitTaskChannels()
 	StartTransformerWorkers()
 	StartUploaderWorkers()
-	logrus.Fatal(NewEcho().Start(fmt.Sprintf("%s:%d", viper.GetString("host"), viper.GetInt("port"))))
+	logrus.Fatal(NewEcho().Start(fmt.Sprintf("%s:%d", Config.Host, Config.Port)))
 }
 
 func StartTransformerWorkers() {
-	num := viper.GetInt("numOfTransformerWorkers")
+	num := Config.NumOfTransformerWorkers
 	TransformerWorkers = make([]*Transformer, num)
 	for i := 0; i < num; i++ {
 		TransformerWorkers[i] = NewTransformer(ResizeTaskChan, ThumbnailTaskChan, UploadTaskChan,make(chan interface{}))
@@ -39,15 +39,15 @@ func StartTransformerWorkers() {
 func StartUploaderWorkers() {
 	// 대체로 UploaderWorker는 한 개만 있어도 됨.
 	// 하나의 UploaderWorker가 작업이 들어오는 족족 goroutine을 실행시키기때문.
-	num := viper.GetInt("numOfUploaderWorkers")
+	num := Config.NumOfUploaderWorkers
 	UploaderWorkers = make([]Uploader, num)
 	for i := 0; i < num; i++ {
-		if viper.GetBool("storage.disk.enabled") {
+		if Config.Storage.Disk.Enabled {
 			UploaderWorkers[i] = &DiskUploader{
 				UploadTaskChan: UploadTaskChan,
 				Quit: make(chan interface{}),
 			}
-		} else if viper.GetBool("storage.aws.enabled"){
+		} else if Config.Storage.Aws.Enabled{
 			sess, err := session.NewSessionWithOptions(session.Options{
 				Config: aws.Config{
 					Region: aws.String("ap-northeast-2"),
