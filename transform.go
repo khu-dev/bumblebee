@@ -53,8 +53,6 @@ func (t *Transformer) Start() {
 	defer t.done.Done()
 loop:
 	for {
-		logrus.Warn("Dummy wait for debugging")
-		time.Sleep(3 * time.Second)
 		select {
 		case thumbnailTask := <-t.ThumbnailTaskChan:
 
@@ -100,7 +98,7 @@ loop:
 				logrus.Info("Transformer에 대한 종료 시그널을 받았었고, 더 이상 작업이 없습니다.")
 				break loop
 			} else {
-				logrus.Info("처리할 작업이 없습니다. 3초 대기합니다.")
+				logrus.Debug("처리할 작업이 없습니다. 3초 대기합니다.")
 				time.Sleep(3 * time.Second)
 			}
 		}

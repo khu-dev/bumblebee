@@ -1,6 +1,9 @@
 package main
 
-import "image"
+import (
+	"fmt"
+	"image"
+)
 
 var (
 	ResizeTaskChan    chan *ImageResizeTask
@@ -39,4 +42,12 @@ func InitTaskChannels() {
 	ResizeTaskChan = make(chan *ImageResizeTask)
 	ThumbnailTaskChan = make(chan *ImageGenerateThumbnailTask)
 	UploadTaskChan = make(chan *ImageUploadTask)
+}
+
+func (t *BaseImageTask) String() string{
+	return fmt.Sprintf("BaseImageTask(OriginalFileName: %s, HashedFileName: %s)", t.OriginalFileName, t.HashedFileName)
+}
+
+func (t *ImageUploadTask) String() string{
+	return fmt.Sprintf("ImageUploadTask(UploadPath: %s, OriginalFileName: %s, HashedFileName: %s)", t.UploadPath, t.OriginalFileName, t.HashedFileName)
 }

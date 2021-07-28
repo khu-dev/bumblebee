@@ -6,30 +6,10 @@ import (
 	"image"
 	"image/png"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 )
-
-var (
-	// Test시에sms Block 없이 간단하게 Test할 수 있도록 Buffered chan 이용
-	transformer     *Transformer
-	transformerQuit chan interface{}
-)
-
-func BeforeEachTransformTest(tb testing.TB) {
-	transformerQuit = make(chan interface{}, 100)
-	transformer = NewTransformer(
-		make(chan *ImageResizeTask, 100),
-		make(chan *ImageGenerateThumbnailTask, 100),
-		make(chan *ImageUploadTask, 100),
-		transformerQuit,
-	)
-}
-
-func AfterEachTransformTest(tb testing.TB) {
-	transformerQuit = nil
-	transformer = nil
-}
 
 // test나 benchmark시에 사용하는 sample image를 다운받는다.
 func downloadSampleImage(tb testing.TB) image.Image {
@@ -54,8 +34,14 @@ func DownloadSampleImage(t *testing.T) image.Image {
 }
 
 func TestTransformer_Resize(t *testing.T) {
-	BeforeEachTransformTest(t)
-	defer AfterEachTransformTest(t)
+	transformerQuit := make(chan interface{})
+	transformer := NewTransformer(
+		make(chan *ImageResizeTask),
+		make(chan *ImageGenerateThumbnailTask),
+		make(chan *ImageUploadTask),
+		transformerQuit,
+		new(sync.WaitGroup),
+	)
 	var imageData image.Image = DownloadSampleImage(t)
 	assert.NotNil(t, imageData)
 	imageResizeTask := &ImageResizeTask{
@@ -72,8 +58,14 @@ func TestTransformer_Resize(t *testing.T) {
 }
 
 func TestTransformer_GenerateThumbnail(t *testing.T) {
-	BeforeEachTransformTest(t)
-	defer AfterEachTransformTest(t)
+	transformerQuit := make(chan interface{})
+	transformer := NewTransformer(
+		make(chan *ImageResizeTask),
+		make(chan *ImageGenerateThumbnailTask),
+		make(chan *ImageUploadTask),
+		transformerQuit,
+		new(sync.WaitGroup),
+	)
 
 	var imageData image.Image = DownloadSampleImage(t)
 	assert.NotNil(t, imageData)
@@ -89,18 +81,26 @@ func TestTransformer_GenerateThumbnail(t *testing.T) {
 
 func TestTransformer_Start(t *testing.T) {
 	t.Run("썸네일", func(t *testing.T) {
-		BeforeEachTransformTest(t)
-		defer AfterEachTransformTest(t)
+		thumbnailTaskChan := make(chan *ImageGenerateThumbnailTask)
+		uploadTaskChan := make(chan *ImageUploadTask)
+		transformerQuit := make(chan interface{})
+		transformer := NewTransformer(
+			make(chan *ImageResizeTask),
+			thumbnailTaskChan,
+			uploadTaskChan,
+			transformerQuit,
+			new(sync.WaitGroup),
+		)
 		go transformer.Start()
 		imageData := DownloadSampleImage(t)
-		transformer.ThumbnailTaskChan <- &ImageGenerateThumbnailTask{
+		thumbnailTaskChan <- &ImageGenerateThumbnailTask{
 			BaseImageTask: &BaseImageTask{
 				OriginalFileName: "google_logo.png",
 				ImageData:        imageData,
 			},
 		}
 		select {
-		case <-transformer.UploadTaskChan:
+		case <-uploadTaskChan:
 		case <-time.After(10 * time.Second):
 			t.Fatal("[TimeOutError] Thumbnail 생성 후 UploadTaskChan에 Message가 들어오지 않습니다.")
 		}
@@ -108,18 +108,26 @@ func TestTransformer_Start(t *testing.T) {
 	})
 
 	t.Run("리사이즈", func(t *testing.T) {
-		BeforeEachTransformTest(t)
-		defer AfterEachTransformTest(t)
+		resizeTaskChan := make(chan *ImageResizeTask)
+		uploadTaskChan := make(chan *ImageUploadTask)
+		transformerQuit := make(chan interface{})
+		transformer := NewTransformer(
+			resizeTaskChan,
+			make(chan *ImageGenerateThumbnailTask),
+			uploadTaskChan,
+			transformerQuit,
+			new(sync.WaitGroup),
+		)
 		go transformer.Start()
 		imageData := DownloadSampleImage(t)
-		transformer.ResizeTaskChan <- &ImageResizeTask{
+		resizeTaskChan <- &ImageResizeTask{
 			BaseImageTask: &BaseImageTask{
 				OriginalFileName: "google_logo.png",
 				ImageData:        imageData,
 			}, ResizingWidth: 128,
 		}
 		select {
-		case <-transformer.UploadTaskChan:
+		case <-uploadTaskChan:
 		case <-time.After(5 * time.Second):
 			t.Fatal("[TimeOutError] Resize 후 UploadTaskChan에 Message가 들어오지 않습니다.")
 		}

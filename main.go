@@ -16,9 +16,12 @@ import (
 )
 
 var (
+	// 이미지 변환 작업 요청을 처리하는 워커
 	TransformerWorkers []*Transformer
+	// 업로드 작업 요청을 처리하는 워커
 	UploaderWorker     Uploader
-	AllWorkerWaitGroup = new(sync.WaitGroup)
+	// TransformerWorkers의 작업이 모두 마무리되었는지를 관리하는 WaitGroup
+	transformerWorkersWG = new(sync.WaitGroup)
 )
 
 func init() {
@@ -56,6 +59,7 @@ func main() {
 		logrus.Error(err)
 	}
 
+	// Transformer들에게 SIGINT가 발생했음을 전파
 	for i := 0; i < len(TransformerWorkers); i++ {
 		go func(transformerIdx int) {
 			logrus.Infof("Transformer %d에게 종료 신호를 보냅니다.", transformerIdx)
@@ -63,16 +67,10 @@ func main() {
 		}(i)
 	}
 
-	completedAllTransformerWorkers := make(chan struct{})
-	go func() {
-		logrus.Info("모든 워커들이 작업을 종료했는지 확인합니다.")
-		AllWorkerWaitGroup.Wait()
-		logrus.Info("모든 워커들이 작업을 종료했습니다.")
-		completedAllTransformerWorkers <- struct{}{}
-	}()
+
 
 	select {
-	case <-completedAllTransformerWorkers:
+	case <-allTransformerWorkersCompleted():
 		logrus.Info("모든 워커들이 작업을 종료하여 서버를 안전하게 종료합니다. 혹시 모를 미완료된 업로드 작업을 위해 5초를 대기합니다.")
 		time.Sleep(5 * time.Second)
 		os.Exit(0)
@@ -86,7 +84,7 @@ func StartTransformerWorkers() {
 	num := Config.NumOfTransformerWorkers
 	TransformerWorkers = make([]*Transformer, num)
 	for i := 0; i < num; i++ {
-		TransformerWorkers[i] = NewTransformer(ResizeTaskChan, ThumbnailTaskChan, UploadTaskChan, make(chan interface{}), AllWorkerWaitGroup)
+		TransformerWorkers[i] = NewTransformer(ResizeTaskChan, ThumbnailTaskChan, UploadTaskChan, make(chan interface{}), transformerWorkersWG)
 		go TransformerWorkers[i].Start()
 		logrus.Info("Started TransformerWorker", i)
 	}
@@ -107,11 +105,25 @@ func StartUploaderWorker() {
 		if err != nil {
 			logrus.Fatal(err)
 		}
-		UploaderWorker = NewS3Uploader(UploadTaskChan, make(chan interface{}), sess, AllWorkerWaitGroup)
+		UploaderWorker = NewS3Uploader(UploadTaskChan, make(chan interface{}), sess)
 	} else {
 		logrus.Fatal("Unsupported storage kind.")
 	}
 	go UploaderWorker.Start()
 	logrus.Info("Started UploaderWorker. ", UploaderWorker)
 
+}
+
+// 모든 Transformer가 작업을 종료하면 channel에 값을 전달합니다.
+// channel을 return하기 때문에 select문을 통해 timeout이나 default를 이용하기 편라합니다.
+func allTransformerWorkersCompleted() <-chan struct{}{
+	logrus.Info("모든 워커들이 작업을 종료했는지 확인합니다.")
+	isAllCompleted := make(chan struct{})
+	go func() {
+
+		transformerWorkersWG.Wait()
+		logrus.Info("모든 워커들이 작업을 종료했습니다.")
+		isAllCompleted <- struct{}{}
+	}()
+	return isAllCompleted
 }

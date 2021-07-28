@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"sync"
 )
 
 var (
@@ -41,7 +40,7 @@ type DiskUploader struct {
 	Quit           <-chan interface{} // 테스트 진행 시 Start를 끝내기 위함
 }
 
-func NewS3Uploader(taskChan chan *ImageUploadTask, quit chan interface{}, sess *session.Session, done *sync.WaitGroup) Uploader {
+func NewS3Uploader(taskChan chan *ImageUploadTask, quit chan interface{}, sess *session.Session) Uploader {
 	autoIncrementUploaderID++
 	return &S3Uploader{
 		ID:             autoIncrementUploaderID,
