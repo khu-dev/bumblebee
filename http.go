@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
-	"image"
 	"path"
 	"strconv"
 	"strings"
@@ -43,13 +42,19 @@ func ImageUploadRequestHandler(c echo.Context) error {
 		logrus.Error(err)
 		return c.JSON(400, map[string]interface{}{
 			"data":    nil,
-			"message": WrongImageFileNameErr.Error(),
+			"message": ErrWrongImageFileName.Error(),
 		})
 	}
 	var hashedFileName string
 	if c.FormValue("hashing") == "false" {
 		splited := strings.Split(inputFileName, ".")
-		hashedFileName = strings.Join(splited[:len(splited)-1], ".")
+		// .확장자의 형태가 아닌 경우
+		if len(splited) == 1 {
+			hashedFileName = inputFileName
+		} else{
+			hashedFileName = strings.Join(splited[:len(splited)-1], ".")
+		}
+
 		logrus.Println("Omit hashing. not hashed name:", hashedFileName)
 	} else {
 		hashedFileName = getHashedFileName(inputFileName)
@@ -61,7 +66,15 @@ func ImageUploadRequestHandler(c echo.Context) error {
 		return err
 	}
 	defer src.Close()
-	imageData, ext, err := image.Decode(src)
+	imageData, ext, err := DecodeImageFile(src)
+
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(400, map[string]interface{}{
+			"data":    nil,
+			"message": ErrUnableToDecodeImage.Error(),
+		})
+	}
 
 	DispatchMessages(&BaseImageTask{
 		ImageData:        imageData,
@@ -88,6 +101,8 @@ type SuccessfullyUploadedResponseData struct {
 	Resized1024URL string `json:"resized_1024_url"`
 }
 
+// fileFullName은 파일 이름 자체와 ., 확장자명이 모두 연결된 문자.
+// e.g. abcd123.png
 func GenerateSuccessfullyUploadedResponse(fileFullName string) *BaseResponse {
 	rootEndpoint := Config.Storage.Aws.Endpoint
 	return &BaseResponse{

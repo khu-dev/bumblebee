@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,7 +27,24 @@ var (
 )
 
 func init() {
-	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: false, ForceColors: true})
+	workingDir, err := os.Getwd()
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	logrus.SetReportCaller(true)
+	logrus.SetFormatter(&logrus.TextFormatter{
+		DisableColors: false,
+		DisableQuote:  true,
+		ForceColors:   true,
+		// line을 깔끔하게 보여줌.
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			filename := strings.Replace(f.File, workingDir+"/", "", -1)
+			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+		},
+		FullTimestamp:   false,
+		TimestampFormat: "2006/01/03 15:04:05",
+	})
 	ezconfig.LoadConfig("KHUMU", Config, []string{"./config", os.Getenv("KHUMU_CONFIG_PATH")})
 }
 
@@ -67,15 +86,13 @@ func main() {
 		}(i)
 	}
 
-
-
 	select {
 	case <-allTransformerWorkersCompleted():
-		logrus.Info("모든 워커들이 작업을 종료하여 서버를 안전하게 종료합니다. 혹시 모를 미완료된 업로드 작업을 위해 5초를 대기합니다.")
-		time.Sleep(5 * time.Second)
+		logrus.Infof("모든 워커들이 작업을 종료하여 서버를 안전하게 종료합니다. 혹시 모를 미완료된 업로드 작업을 위해 %d초를 대기합니다.", Config.GracefulShutdown.UploaderTimeout)
+		time.Sleep(time.Duration(Config.GracefulShutdown.UploaderTimeout) * time.Second)
 		os.Exit(0)
-	case <-time.After(20 * time.Second):
-		logrus.Error("Graceful shutdown의 Max timeout인 20초가 경과되었음에도 작업을 모두 완료하지 못했습니다. 강제로 종료합니다.")
+	case <-time.After(time.Duration(Config.GracefulShutdown.MaxTimeout) * time.Second):
+		logrus.Errorf("Graceful shutdown의 Max timeout인 %d초가 경과되었음에도 작업을 모두 완료하지 못했습니다. 강제로 종료합니다. (개발 환경에서 편의상 transformer의 loop delay보다 짧게 기다리는 경우 발생할 수도 있음.)", Config.GracefulShutdown.MaxTimeout)
 		os.Exit(1)
 	}
 }

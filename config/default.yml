@@ -1,10 +1,18 @@
 host: "0.0.0.0"
 port: 9001
+# 이미지 변환 작업을 수행할 goroutine의 개수
 numOfTransformerWorkers: 3
+gracefulShutdown:
+  # SIGINT 발생 후 강제 종료까지의 timeout
+  maxTimeout: 20
+  # 이미지 변환 작업 후 업로드 작업 완료를 위해 여유롭게 추가적으로 기다리는 시간
+  uploaderTimeout: 5
 
+# 어떤 저장소에 업로드, 변환된 이미지 파일을 저장할 것인지
 storage:
   aws:
     enabled: false
+    # S3 bucklet name
     bucketName: dev-khumu-disk
     endpoint: "https://storage.khumu.jinsu.me/"
   disk:
