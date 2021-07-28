@@ -8,7 +8,6 @@ type BumblebeeConfig struct {
 	Host string
 	Port int
 	NumOfTransformerWorkers int
-	NumOfUploaderWorkers int
 	Storage struct{
 		Aws struct{
 			Enabled bool

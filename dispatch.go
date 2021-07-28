@@ -2,6 +2,10 @@ package main
 
 import "github.com/sirupsen/logrus"
 
+// 기본적으로 이미지 분석 요청이 들어오면
+// 썸네일 요청 변환 요청
+// 그 외의 리사이징 변환 요청
+// 원본이미지 업로드 요청을 만든다.
 func DispatchMessages(baseImageTask *BaseImageTask){
     // base image task를 복제하면 imageData가 복제되어 메모리를 너무 많이 점유하지는 않을까?
 	// => imageData안에는 결국 byte arr의 데이터가 들어있을텐데, 이는 = 할당을 해도 deepcopy 되는 것이아니라
@@ -12,7 +16,7 @@ func DispatchMessages(baseImageTask *BaseImageTask){
 	    ThumbnailTaskChan <- &ImageGenerateThumbnailTask{
 	        BaseImageTask: baseImageTask,
         }
-        logrus.Print("Enqueued thumbnail task")
+        logrus.Info("Enqueued thumbnail task")
 	}()
 
 	// Enqueue 리사이징 생성 작업
@@ -22,7 +26,7 @@ func DispatchMessages(baseImageTask *BaseImageTask){
 	            BaseImageTask: baseImageTask,
 	            ResizingWidth: size,
             }
-            logrus.Print("Enqueued resize task")
+            logrus.Info("Enqueued resize task for ", size)
         }
     }()
 
@@ -32,6 +36,6 @@ func DispatchMessages(baseImageTask *BaseImageTask){
 	        BaseImageTask: baseImageTask,
 	        UploadPath: "original",
         }
-        logrus.Print("Enqueued upload task")
+        logrus.Info("Enqueued upload task")
     }()
 }
