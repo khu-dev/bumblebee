@@ -66,7 +66,7 @@ func ImageUploadRequestHandler(c echo.Context) error {
 		return err
 	}
 	defer src.Close()
-	imageData, ext, err := DecodeImageFile(src)
+	imageData, gifImageData, ext, err := DecodeImageFile(src)
 
 	if err != nil {
 		logrus.Error(err)
@@ -78,6 +78,7 @@ func ImageUploadRequestHandler(c echo.Context) error {
 
 	DispatchMessages(&BaseImageTask{
 		ImageData:        imageData,
+		GIFImageData: gifImageData,
 		OriginalFileName: inputFileName,
 		HashedFileName:   hashedFileName,
 		Extension:        ext,

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"image"
+	"image/gif"
 	"io"
 	"strconv"
 	"time"
@@ -38,15 +39,15 @@ var (
 // jpg는 jpeg로 해석됨.
 // bmp는 png로 해석됨.
 // gif는 로직이 많이 달라서 미지원
-func DecodeImageFile(reader io.Reader) (imageData image.Image, extension string, err error){
+func DecodeImageFile(reader io.Reader) (imageData image.Image, gifImageData *gif.GIF, extension string, err error){
 	imageData, extension, err = image.Decode(reader)
 	if err != nil {
 		if errors.Is(err, image.ErrFormat) {
 			// gif는 로직이 많이 달라서 미지원
-			//imageData, err = gif.Decode(reader)
-			//if err != nil {
-			//	return
-			//}
+			gifImageData, err = gif.DecodeAll(reader)
+			if err != nil {
+				return
+			}
 
 			return
 		}

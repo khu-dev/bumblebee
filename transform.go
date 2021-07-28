@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/nfnt/resize"
 	"github.com/sirupsen/logrus"
+	"image"
 	"path"
 	"strconv"
 	"sync"
@@ -55,14 +56,21 @@ loop:
 	for {
 		select {
 		case thumbnailTask := <-t.ThumbnailTaskChan:
-
 			logrus.Println("ThumbnailTask", thumbnailTask)
+			err := thumbnailTask.Validate()
+			if err != nil {
+				logrus.Error(err)
+				// 이건 for문 break이 아니라 밑을 실행 안한다는 것임
+				break
+			}
+
 			t.GenerateThumbnail(thumbnailTask)
 			uploadTask := &ImageUploadTask{
 				BaseImageTask: &BaseImageTask{
 					OriginalFileName: thumbnailTask.OriginalFileName,
 					HashedFileName:   thumbnailTask.HashedFileName,
 					ImageData:        thumbnailTask.ThumbnailImageData,
+
 					Extension:        thumbnailTask.Extension,
 				},
 				UploadPath: "thumbnail",
@@ -71,6 +79,13 @@ loop:
 			logrus.Println("Add UploadTask", uploadTask)
 		case resizeTask := <-t.ResizeTaskChan:
 			logrus.Println("ResizeTask", resizeTask)
+			err := resizeTask.Validate()
+			if err != nil {
+				logrus.Error(err)
+				// 이건 for문 break이 아니라 밑을 실행 안한다는 것임
+				break
+			}
+
 			if resizeTask.ResizingWidth < resizeTask.ImageData.Bounds().Dx() {
 				t.Resize(resizeTask)
 			} else {
@@ -106,14 +121,28 @@ loop:
 
 }
 
+
 func (t *Transformer) Resize(task *ImageResizeTask) {
 	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
 	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 }
 
 func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
-	w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
-	task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
+	if task.ImageData != nil {
+		w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
+		task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
+	} else if task.GIFImageData != nil {
+		w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.GIFImageData.Config.Width, task.GIFImageData.Config.Height)
+
+		for i := range task.GIFImageData.Image {
+			resizedImage, ok := resize.Resize(w, h, task.ImageData, resize.Lanczos3).(*image.Paletted)
+			if !ok {
+				logrus.Error("GIF의 내부적인 각 이미지를 변환하는 데에 오류가 발생했습니다.")
+			}
+			task.GIFImageData.Image[i] = resizedImage
+		}
+	}
+
 }
 
 func (t *Transformer) getProperSizeBasedOnWidth(desiredWidth, originalW, originalH int) (uint, uint) {
