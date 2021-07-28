@@ -8,7 +8,11 @@ type BumblebeeConfig struct {
 	Host                    string
 	Port                    int
 	NumOfTransformerWorkers int
-	Storage                 struct {
+	GracefulShutdown        struct {
+		MaxTimeout      int
+		UploaderTimeout int
+	}
+	Storage struct {
 		Aws struct {
 			Enabled    bool
 			BucketName string
