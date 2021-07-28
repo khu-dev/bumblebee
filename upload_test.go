@@ -19,10 +19,10 @@ var (
 	uploadTaskChan    chan *ImageUploadTask
 	uploaderQuit      chan interface{}
 	uploadPathForTest string = "test_data" // 주의. 이 패스는 수행 후 사라짐.
-	bucketName string = "dev-khumu-disk"
+	bucketName        string = "dev-khumu-disk"
 )
 
-func init(){
+func init() {
 	ezconfig.LoadConfig("KHUMU", Config, []string{"./config", os.Getenv("KHUMU_CONFIG_PATH")})
 }
 
@@ -68,7 +68,7 @@ func AfterEachUploadTest_S3Uploader(tb testing.TB) {
 	)
 	assert.NoError(tb, err)
 	objectIdentifiers := make([]*s3.ObjectIdentifier, 0)
-	for _, object := range objects.Contents{
+	for _, object := range objects.Contents {
 		objectIdentifiers = append(objectIdentifiers, &s3.ObjectIdentifier{Key: object.Key})
 	}
 
@@ -101,7 +101,7 @@ func TestS3Uploader_Upload(t *testing.T) {
 	err := uploader.Upload(task)
 	assert.NoError(t, err)
 
-	resp, err := http.Get(fmt.Sprintf("%s%s/%s", Config.Storage.Aws.Endpoint, task.UploadPath, task.HashedFileName + "." + task.Extension))
+	resp, err := http.Get(fmt.Sprintf("%s%s/%s", Config.Storage.Aws.Endpoint, task.UploadPath, task.HashedFileName+"."+task.Extension))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -114,7 +114,7 @@ func TestDiskUploader_Start(t *testing.T) {
 	go uploader.Start()
 	task := &ImageUploadTask{
 		BaseImageTask: &BaseImageTask{
-			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd",Extension: "png",
+			ImageData: imageData, OriginalFileName: "google_logo.png", HashedFileName: "abcd1234abcd", Extension: "png",
 		},
 		UploadPath: uploadPathForTest,
 	}

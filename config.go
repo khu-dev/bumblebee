@@ -5,17 +5,17 @@ var (
 )
 
 type BumblebeeConfig struct {
-	Host string
-	Port int
+	Host                    string
+	Port                    int
 	NumOfTransformerWorkers int
-	Storage struct{
-		Aws struct{
-			Enabled bool
+	Storage                 struct {
+		Aws struct {
+			Enabled    bool
 			BucketName string
-			Endpoint string
+			Endpoint   string
 		}
-		Disk struct{
-			Enabled bool
+		Disk struct {
+			Enabled  bool
 			RootPath string
 		}
 	}

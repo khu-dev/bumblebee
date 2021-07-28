@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	ThumbnailWidth  = 128
+	ThumbnailWidth = 128
 	// 새로운 사이즈의 리사이징이 필요할 경우 이곳만 바꿔주면 된다.
-	ResizeSizes = []int{256, 512, 1024}
+	ResizeSizes                = []int{256, 512, 1024}
 	autoIncrementTransformerID = 0
 )
 
@@ -22,26 +22,26 @@ type Transformer struct {
 	// 썸네일 생성 요청을 받아 처리하기 위한 채널.
 	ThumbnailTaskChan <-chan *ImageGenerateThumbnailTask
 	// 리사이즈 요청을 받아 처리하기 위한 채널.
-	ResizeTaskChan    <-chan *ImageResizeTask
+	ResizeTaskChan <-chan *ImageResizeTask
 	// 이미지 변환 후 업로드하기 위한 작업 요청 채널
-	UploadTaskChan    chan<- *ImageUploadTask
+	UploadTaskChan chan<- *ImageUploadTask
 	// 테스트 진행 시에나 graceful shutdown을 통해 Transformer에게 종료이벤트를 전달하기 위함
-	Quit              chan interface{}
+	Quit chan interface{}
 	// Quit channel을 통해 quit 요청이 들어와서 quit하고자 하는 상태인지
 	quit bool
 	// 작업을 모두 마무리했는지 보고하기 위함.
 	done *sync.WaitGroup
 }
 
-func NewTransformer(resizeChan chan *ImageResizeTask, thumbnailChan chan *ImageGenerateThumbnailTask, uploadChan chan *ImageUploadTask, quit chan interface{}, done *sync.WaitGroup) *Transformer{
+func NewTransformer(resizeChan chan *ImageResizeTask, thumbnailChan chan *ImageGenerateThumbnailTask, uploadChan chan *ImageUploadTask, quit chan interface{}, done *sync.WaitGroup) *Transformer {
 	autoIncrementTransformerID++
 	return &Transformer{
-		ID: autoIncrementTransformerID,
-		ResizeTaskChan: resizeChan,
+		ID:                autoIncrementTransformerID,
+		ResizeTaskChan:    resizeChan,
 		ThumbnailTaskChan: thumbnailChan,
-		UploadTaskChan: uploadChan,
-		Quit: quit,
-		done: done,
+		UploadTaskChan:    uploadChan,
+		Quit:              quit,
+		done:              done,
 	}
 }
 
@@ -51,7 +51,7 @@ func (t *Transformer) Start() {
 	defer logrus.Info("Finished Transformer")
 	t.done.Add(1)
 	defer t.done.Done()
-	loop:
+loop:
 	for {
 		logrus.Warn("Dummy wait for debugging")
 		time.Sleep(3 * time.Second)
@@ -118,13 +118,13 @@ func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
 	task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 }
 
-func (t *Transformer) getProperSizeBasedOnWidth(desiredWidth, originalW, originalH int) (uint, uint){
+func (t *Transformer) getProperSizeBasedOnWidth(desiredWidth, originalW, originalH int) (uint, uint) {
 	// resize 안해도 됨.
 	var width, height int
-	if desiredWidth > originalW{
+	if desiredWidth > originalW {
 		width = originalW
 		height = originalW
-	} else{
+	} else {
 		width = desiredWidth
 		height = originalH * desiredWidth / originalW
 	}

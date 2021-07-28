@@ -32,7 +32,7 @@ func AfterEachTransformTest(tb testing.TB) {
 }
 
 // test나 benchmark시에 사용하는 sample image를 다운받는다.
-func downloadSampleImage(tb testing.TB) image.Image{
+func downloadSampleImage(tb testing.TB) image.Image {
 	resp, err := http.Get("https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png")
 	assert.NoError(tb, err)
 	assert.NotNil(tb, resp)
