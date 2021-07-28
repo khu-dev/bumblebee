@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrNoImageDataToUpload         = errors.New("ImageData가 nil이기 때문에 업로드할 수 없습니다.")
+	ErrNoImageDataToUpload  = errors.New("ImageData가 nil이기 때문에 업로드할 수 없습니다.")
 	autoIncrementUploaderID = 0
 )
 
@@ -99,7 +99,6 @@ func (u *S3Uploader) Upload(task *ImageUploadTask) error {
 		}
 	}
 
-
 	_, err := u.s3Uploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(u.bucketName),
 		Body:        body,
@@ -137,7 +136,7 @@ func (u *DiskUploader) Start() {
 func (u *DiskUploader) Upload(task *ImageUploadTask) error {
 	logrus.Println("Uploading...", task)
 	defer logrus.Println("Finished ", task)
-	if task.ImageData == nil && task.GIFImageData == nil{
+	if task.ImageData == nil && task.GIFImageData == nil {
 		logrus.Error(ErrNoImageDataToUpload)
 		return ErrNoImageDataToUpload
 	}

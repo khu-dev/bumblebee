@@ -51,7 +51,7 @@ func ImageUploadRequestHandler(c echo.Context) error {
 		// .확장자의 형태가 아닌 경우
 		if len(splited) == 1 {
 			hashedFileName = inputFileName
-		} else{
+		} else {
 			hashedFileName = strings.Join(splited[:len(splited)-1], ".")
 		}
 
@@ -78,7 +78,7 @@ func ImageUploadRequestHandler(c echo.Context) error {
 
 	DispatchMessages(&BaseImageTask{
 		ImageData:        imageData,
-		GIFImageData: gifImageData,
+		GIFImageData:     gifImageData,
 		OriginalFileName: inputFileName,
 		HashedFileName:   hashedFileName,
 		Extension:        ext,

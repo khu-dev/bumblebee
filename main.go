@@ -21,7 +21,7 @@ var (
 	// 이미지 변환 작업 요청을 처리하는 워커
 	TransformerWorkers []*Transformer
 	// 업로드 작업 요청을 처리하는 워커
-	UploaderWorker     Uploader
+	UploaderWorker Uploader
 	// TransformerWorkers의 작업이 모두 마무리되었는지를 관리하는 WaitGroup
 	transformerWorkersWG = new(sync.WaitGroup)
 )
@@ -133,7 +133,7 @@ func StartUploaderWorker() {
 
 // 모든 Transformer가 작업을 종료하면 channel에 값을 전달합니다.
 // channel을 return하기 때문에 select문을 통해 timeout이나 default를 이용하기 편라합니다.
-func allTransformerWorkersCompleted() <-chan struct{}{
+func allTransformerWorkersCompleted() <-chan struct{} {
 	logrus.Info("모든 워커들이 작업을 종료했는지 확인합니다.")
 	isAllCompleted := make(chan struct{})
 	go func() {

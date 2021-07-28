@@ -73,7 +73,7 @@ loop:
 					OriginalFileName: thumbnailTask.OriginalFileName,
 					HashedFileName:   thumbnailTask.HashedFileName,
 					ImageData:        thumbnailTask.ThumbnailImageData,
-					GIFImageData: thumbnailTask.ThumbnailGIFImageData,
+					GIFImageData:     thumbnailTask.ThumbnailGIFImageData,
 					Extension:        thumbnailTask.Extension,
 				},
 				UploadPath: "thumbnail",
@@ -89,12 +89,12 @@ loop:
 				break
 			}
 			originalWidth, err := resizeTask.GetOriginalWidth()
-			if err != nil{
+			if err != nil {
 				logrus.Error(err)
 				break
 			}
 
-			if resizeTask.ResizingWidth < originalWidth{
+			if resizeTask.ResizingWidth < originalWidth {
 				t.Resize(resizeTask)
 			} else {
 				// Resize 필요 없음.
@@ -107,7 +107,7 @@ loop:
 					OriginalFileName: resizeTask.OriginalFileName,
 					HashedFileName:   resizeTask.HashedFileName,
 					ImageData:        resizeTask.ResizedImageData,
-					GIFImageData: resizeTask.ResizedGIFImageData,
+					GIFImageData:     resizeTask.ResizedGIFImageData,
 					Extension:        resizeTask.Extension,
 				},
 				UploadPath: path.Join("resized", strconv.Itoa(resizeTask.ResizingWidth)),
@@ -130,7 +130,6 @@ loop:
 	}
 }
 
-
 func (t *Transformer) Resize(task *ImageResizeTask) {
 	if task.ImageData != nil {
 		w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
@@ -143,10 +142,10 @@ func (t *Transformer) Resize(task *ImageResizeTask) {
 		// https://stackoverflow.com/questions/35850753/how-to-convert-image-rgba-image-image-to-image-paletted
 		// NewGIF 메소드를 제공하는 곳이 없어서 원본 GIF를 바탕으로 복사한다.
 		task.ResizedGIFImageData = &gif.GIF{
-			Image: make([]*image.Paletted, len(task.GIFImageData.Image)),
-			Delay: task.GIFImageData.Delay,
-			Disposal: task.GIFImageData.Disposal,
-			Config: image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
+			Image:           make([]*image.Paletted, len(task.GIFImageData.Image)),
+			Delay:           task.GIFImageData.Delay,
+			Disposal:        task.GIFImageData.Disposal,
+			Config:          image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
 			BackgroundIndex: task.GIFImageData.BackgroundIndex,
 		}
 		for i := range task.GIFImageData.Image {
@@ -170,10 +169,10 @@ func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
 		// https://stackoverflow.com/questions/35850753/how-to-convert-image-rgba-image-image-to-image-paletted
 		// NewGIF 메소드를 제공하는 곳이 없어서 원본 GIF를 바탕으로 복사한다.
 		task.ThumbnailGIFImageData = &gif.GIF{
-			Image: make([]*image.Paletted, len(task.GIFImageData.Image)),
-			Delay: task.GIFImageData.Delay,
-			Disposal: task.GIFImageData.Disposal,
-			Config: image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
+			Image:           make([]*image.Paletted, len(task.GIFImageData.Image)),
+			Delay:           task.GIFImageData.Delay,
+			Disposal:        task.GIFImageData.Disposal,
+			Config:          image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
 			BackgroundIndex: task.GIFImageData.BackgroundIndex,
 		}
 		for i := range task.GIFImageData.Image {

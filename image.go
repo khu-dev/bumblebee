@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ErrWrongImageFileName = errors.New("잘못된 형식의 이미지 파일 이름입니다. .jpg, .jpeg, .png 등의 이미지를 업로드해주세요.")
+	ErrWrongImageFileName  = errors.New("잘못된 형식의 이미지 파일 이름입니다. .jpg, .jpeg, .png 등의 이미지를 업로드해주세요.")
 	ErrUnableToDecodeImage = errors.New(" 이미지 파일을 해석할 수 없습니다. 지원하지 않는 포맷의 이미지일 수 있습니다.")
 )
 
@@ -23,7 +23,7 @@ var (
 // jpg는 jpeg로 해석됨.
 // bmp는 png로 해석됨.
 // gif는 로직이 많이 달라서 미지원
-func DecodeImageFile(reader io.Reader) (imageData image.Image, gifImageData *gif.GIF, extension string, err error){
+func DecodeImageFile(reader io.Reader) (imageData image.Image, gifImageData *gif.GIF, extension string, err error) {
 	// reader는 한 번만 읽을 수 있으므로 복사해둔다.
 	tmpData, err := ioutil.ReadAll(reader)
 	if err != nil {

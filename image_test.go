@@ -1,17 +1,17 @@
 package main
 
 import (
-    "bytes"
-    "github.com/sirupsen/logrus"
-    "github.com/stretchr/testify/assert"
-    "io/ioutil"
-    "testing"
+	"bytes"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"testing"
 )
 
 // echo의 request handler에서 file을 decode 하는 과정을 테스트
 func TestDecodeImageFile(t *testing.T) {
-	for i, tc := range []struct{
-		filename string
+	for i, tc := range []struct {
+		filename    string
 		expectedExt string
 	}{
 		{filename: "test/test_bmp.bmp", expectedExt: "png"},
@@ -23,7 +23,7 @@ func TestDecodeImageFile(t *testing.T) {
 		{filename: "test/test_jpeg.jpeg", expectedExt: "jpeg"},
 		{filename: "test/test_png", expectedExt: "png"},
 		{filename: "test/test_png.png", expectedExt: "png"},
-	}{
+	} {
 		logrus.Infof("Test Case[%d] - %s", i, tc)
 		data, err := ioutil.ReadFile(tc.filename)
 		assert.NoError(t, err)
@@ -31,15 +31,16 @@ func TestDecodeImageFile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expectedExt, ext)
-		if tc.expectedExt == "gif"{
+		if tc.expectedExt == "gif" {
 			assert.Nil(t, imageData)
 			assert.NotNil(t, gifImageData)
-		} else{
+		} else {
 			assert.NotNil(t, imageData)
 			assert.Nil(t, gifImageData)
 		}
 	}
 }
+
 //type parseImageFileNameTestCase struct {
 //	originalFileName string
 //	parsedFileName   string
