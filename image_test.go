@@ -27,42 +27,19 @@ func TestDecodeImageFile(t *testing.T) {
 		logrus.Infof("Test Case[%d] - %s", i, tc)
 		data, err := ioutil.ReadFile(tc.filename)
 		assert.NoError(t, err)
-		imageData, ext, err := DecodeImageFile(bytes.NewReader(data))
+		imageData, gifImageData, ext, err := DecodeImageFile(bytes.NewReader(data))
 
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expectedExt, ext)
-		assert.NotNil(t, imageData)
+		if tc.expectedExt == "gif"{
+			assert.Nil(t, imageData)
+			assert.NotNil(t, gifImageData)
+		} else{
+			assert.NotNil(t, imageData)
+			assert.Nil(t, gifImageData)
+		}
 	}
-
 }
-
-func TestDecodeImageFile2(t *testing.T) {
-	for i, tc := range []struct{
-		filename string
-		expectedExt string
-	}{
-		{filename: "test/test_bmp.bmp", expectedExt: "png"},
-		{filename: "test/test_bmp", expectedExt: "png"},
-		// gif 는 로직이 많이 달라서 아직 미지원
-		//{filename: "test/test_gif", expectedExt: "gif"},
-		//{filename: "test/test_gif.gif", expectedExt: "gif"},
-		{filename: "test/test_jpeg", expectedExt: "jpeg"},
-		{filename: "test/test_jpeg.jpg", expectedExt: "jpeg"},
-		{filename: "test/test_jpeg.jpeg", expectedExt: "jpeg"},
-		{filename: "test/test_png", expectedExt: "png"},
-		{filename: "test/test_png.png", expectedExt: "png"},
-	}{
-		logrus.Infof("Test Case[%d] - %s", i, tc)
-		data, err := ioutil.ReadFile(tc.filename)
-		assert.NoError(t, err)
-		imageData, ext, err := DecodeImageFile(bytes.NewReader(data))
-		assert.NoError(t, err)
-		assert.Equal(t, tc.expectedExt, ext)
-		assert.NotNil(t, imageData)
-	}
-
-}
-
 //type parseImageFileNameTestCase struct {
 //	originalFileName string
 //	parsedFileName   string

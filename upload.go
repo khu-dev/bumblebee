@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/sirupsen/logrus"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"log"
@@ -16,7 +17,7 @@ import (
 )
 
 var (
-	ErrNilImageData         = errors.New("ImageData가 nil이기 때문에 업로드할 수 없습니다.")
+	ErrNoImageDataToUpload         = errors.New("ImageData가 nil이기 때문에 업로드할 수 없습니다.")
 	autoIncrementUploaderID = 0
 )
 
@@ -76,20 +77,28 @@ func (u *S3Uploader) Start() {
 }
 
 func (u *S3Uploader) Upload(task *ImageUploadTask) error {
+	logrus.Println("Uploading...", task)
+	defer logrus.Println("Finished ", task)
 	body := bytes.NewBuffer([]byte{})
 
 	switch task.Extension {
 	case "png":
 		err := png.Encode(body, task.ImageData)
 		if err != nil {
-			logrus.Error(3, err)
+			logrus.Error(err)
 		}
 	case "jpg", "jpeg":
 		err := jpeg.Encode(body, task.ImageData, nil)
 		if err != nil {
-			logrus.Error(4, err)
+			logrus.Error(err)
+		}
+	case "gif":
+		err := gif.EncodeAll(body, task.GIFImageData)
+		if err != nil {
+			logrus.Error(err)
 		}
 	}
+
 
 	_, err := u.s3Uploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(u.bucketName),
@@ -110,8 +119,8 @@ func (u *DiskUploader) String() string {
 }
 
 func (u *DiskUploader) Start() {
-	logrus.Print("Started S3Uploader")
-	defer logrus.Print("Finished S3Uploader")
+	logrus.Print("Started DiskUploader")
+	defer logrus.Print("Finished DiskUploader")
 
 	for loop := true; loop; {
 		select {
@@ -127,9 +136,10 @@ func (u *DiskUploader) Start() {
 
 func (u *DiskUploader) Upload(task *ImageUploadTask) error {
 	logrus.Println("Uploading...", task)
-	if task.ImageData == nil {
-		logrus.Error(ErrNilImageData)
-		return ErrNilImageData
+	defer logrus.Println("Finished ", task)
+	if task.ImageData == nil && task.GIFImageData == nil{
+		logrus.Error(ErrNoImageDataToUpload)
+		return ErrNoImageDataToUpload
 	}
 
 	file, err := os.Create(path.Join(task.UploadPath, task.HashedFileName+"."+task.Extension))
@@ -158,6 +168,11 @@ func (u *DiskUploader) Upload(task *ImageUploadTask) error {
 		err := jpeg.Encode(file, task.ImageData, nil)
 		if err != nil {
 			log.Fatal(4, err)
+		}
+	case "gif":
+		err := gif.EncodeAll(file, task.GIFImageData)
+		if err != nil {
+			logrus.Error(err)
 		}
 	}
 

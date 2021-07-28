@@ -1,3 +1,6 @@
+/**
+Channel이 메시지의 형태로 Task를 주고받습니다.
+ */
 package main
 
 import (
@@ -67,4 +70,24 @@ func (t *BaseImageTask) Validate() error{
 	}
 
 	return nil
+}
+
+func (t *BaseImageTask) GetOriginalWidth() (int, error){
+	if t.ImageData != nil {
+		return t.ImageData.Bounds().Dx(), nil
+	} else if t.GIFImageData != nil {
+		return t.GIFImageData.Config.Width, nil
+	} else{
+		return 0, ErrNoImageErr
+	}
+}
+
+func (t *BaseImageTask) GetOriginalHeight() (int, error){
+	if t.ImageData != nil {
+		return t.ImageData.Bounds().Dy(), nil
+	} else if t.GIFImageData != nil {
+		return t.GIFImageData.Config.Height, nil
+	} else{
+		return 0, ErrNoImageErr
+	}
 }

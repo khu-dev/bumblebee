@@ -4,6 +4,9 @@ import (
 	"github.com/nfnt/resize"
 	"github.com/sirupsen/logrus"
 	"image"
+	"image/color/palette"
+	"image/draw"
+	"image/gif"
 	"path"
 	"strconv"
 	"sync"
@@ -70,7 +73,7 @@ loop:
 					OriginalFileName: thumbnailTask.OriginalFileName,
 					HashedFileName:   thumbnailTask.HashedFileName,
 					ImageData:        thumbnailTask.ThumbnailImageData,
-
+					GIFImageData: thumbnailTask.ThumbnailGIFImageData,
 					Extension:        thumbnailTask.Extension,
 				},
 				UploadPath: "thumbnail",
@@ -85,12 +88,18 @@ loop:
 				// 이건 for문 break이 아니라 밑을 실행 안한다는 것임
 				break
 			}
+			originalWidth, err := resizeTask.GetOriginalWidth()
+			if err != nil{
+				logrus.Error(err)
+				break
+			}
 
-			if resizeTask.ResizingWidth < resizeTask.ImageData.Bounds().Dx() {
+			if resizeTask.ResizingWidth < originalWidth{
 				t.Resize(resizeTask)
 			} else {
 				// Resize 필요 없음.
 				resizeTask.ResizedImageData = resizeTask.ImageData
+				resizeTask.ResizedGIFImageData = resizeTask.GIFImageData
 			}
 
 			uploadTask := &ImageUploadTask{
@@ -98,6 +107,7 @@ loop:
 					OriginalFileName: resizeTask.OriginalFileName,
 					HashedFileName:   resizeTask.HashedFileName,
 					ImageData:        resizeTask.ResizedImageData,
+					GIFImageData: resizeTask.ResizedGIFImageData,
 					Extension:        resizeTask.Extension,
 				},
 				UploadPath: path.Join("resized", strconv.Itoa(resizeTask.ResizingWidth)),
@@ -118,13 +128,34 @@ loop:
 			}
 		}
 	}
-
 }
 
 
 func (t *Transformer) Resize(task *ImageResizeTask) {
-	w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
-	task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
+	if task.ImageData != nil {
+		w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.ImageData.Bounds().Dx(), task.ImageData.Bounds().Dy())
+		task.ResizedImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
+	} else if task.GIFImageData != nil {
+		w, h := t.getProperSizeBasedOnWidth(task.ResizingWidth, task.GIFImageData.Config.Width, task.GIFImageData.Config.Height)
+		// gif resize 참고. 상당히 어려움
+		// https://stackoverflow.com/a/54210633/9471220
+		// image.Image* => image.Palette 참고
+		// https://stackoverflow.com/questions/35850753/how-to-convert-image-rgba-image-image-to-image-paletted
+		// NewGIF 메소드를 제공하는 곳이 없어서 원본 GIF를 바탕으로 복사한다.
+		task.ResizedGIFImageData = &gif.GIF{
+			Image: make([]*image.Paletted, len(task.GIFImageData.Image)),
+			Delay: task.GIFImageData.Delay,
+			Disposal: task.GIFImageData.Disposal,
+			Config: image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
+			BackgroundIndex: task.GIFImageData.BackgroundIndex,
+		}
+		for i := range task.GIFImageData.Image {
+			rgbImage := resize.Resize(w, h, task.GIFImageData.Image[i], resize.Lanczos3)
+			palettedImage := image.NewPaletted(rgbImage.Bounds(), palette.Plan9)
+			draw.Draw(palettedImage, palettedImage.Rect, rgbImage, rgbImage.Bounds().Min, draw.Over)
+			task.ResizedGIFImageData.Image[i] = palettedImage
+		}
+	}
 }
 
 func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
@@ -133,13 +164,23 @@ func (t *Transformer) GenerateThumbnail(task *ImageGenerateThumbnailTask) {
 		task.ThumbnailImageData = resize.Resize(w, h, task.ImageData, resize.Lanczos3)
 	} else if task.GIFImageData != nil {
 		w, h := t.getProperSizeBasedOnWidth(ThumbnailWidth, task.GIFImageData.Config.Width, task.GIFImageData.Config.Height)
-
+		// gif resize 참고. 상당히 어려움
+		// https://stackoverflow.com/a/54210633/9471220
+		// image.Image* => image.Palette 참고
+		// https://stackoverflow.com/questions/35850753/how-to-convert-image-rgba-image-image-to-image-paletted
+		// NewGIF 메소드를 제공하는 곳이 없어서 원본 GIF를 바탕으로 복사한다.
+		task.ThumbnailGIFImageData = &gif.GIF{
+			Image: make([]*image.Paletted, len(task.GIFImageData.Image)),
+			Delay: task.GIFImageData.Delay,
+			Disposal: task.GIFImageData.Disposal,
+			Config: image.Config{ColorModel: task.GIFImageData.Config.ColorModel, Width: int(w), Height: int(h)},
+			BackgroundIndex: task.GIFImageData.BackgroundIndex,
+		}
 		for i := range task.GIFImageData.Image {
-			resizedImage, ok := resize.Resize(w, h, task.ImageData, resize.Lanczos3).(*image.Paletted)
-			if !ok {
-				logrus.Error("GIF의 내부적인 각 이미지를 변환하는 데에 오류가 발생했습니다.")
-			}
-			task.GIFImageData.Image[i] = resizedImage
+			rgbImage := resize.Resize(w, h, task.GIFImageData.Image[i], resize.Lanczos3)
+			palettedImage := image.NewPaletted(rgbImage.Bounds(), palette.Plan9)
+			draw.Draw(palettedImage, palettedImage.Rect, rgbImage, rgbImage.Bounds().Min, draw.Over)
+			task.ThumbnailGIFImageData.Image[i] = palettedImage
 		}
 	}
 

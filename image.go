@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"image"
 	"image/gif"
 	"io"
+	"io/ioutil"
 	"strconv"
 	"time"
 )
@@ -16,41 +19,33 @@ var (
 	ErrUnableToDecodeImage = errors.New(" 이미지 파일을 해석할 수 없습니다. 지원하지 않는 포맷의 이미지일 수 있습니다.")
 )
 
-// 옛날에 만들어놨는데 이제 decode를 써서 필요없을듯
-//func ParseImageFileName(fileName string) (string, string, error) {
-//	splitted := strings.Split(fileName, ".")
-//	if len(splitted) < 2 || splitted[0] == "" {
-//		return "", "", ErrWrongImageFileName
-//	}
-//	pureName := strings.Join(splitted[:len(splitted)-1], ".")
-//	ext := splitted[len(splitted)-1]
-//	switch ext {
-//	case "jpeg", "jpg":
-//		ext = "jpeg"
-//	case "png":
-//	default:
-//		return "", "", ErrWrongImageFileName
-//	}
-//
-//	return pureName, ext, nil
-//}
-
 // 현재 되는 걸로 확인된 이미지 확장자 - jpeg, jpg, png
 // jpg는 jpeg로 해석됨.
 // bmp는 png로 해석됨.
 // gif는 로직이 많이 달라서 미지원
 func DecodeImageFile(reader io.Reader) (imageData image.Image, gifImageData *gif.GIF, extension string, err error){
-	imageData, extension, err = image.Decode(reader)
+	// reader는 한 번만 읽을 수 있으므로 복사해둔다.
+	tmpData, err := ioutil.ReadAll(reader)
 	if err != nil {
-		if errors.Is(err, image.ErrFormat) {
-			// gif는 로직이 많이 달라서 미지원
-			gifImageData, err = gif.DecodeAll(reader)
-			if err != nil {
-				return
-			}
+		logrus.Error(err)
+		return
+	}
 
+	imageData, extension, err = image.Decode(bytes.NewReader(tmpData))
+
+	// gif package의 init에 extension 등록이 있음.
+	// 따라서 gif package를 import하지 않으면 gif도 ErrFormat처리됨
+	if extension == "gif" {
+		imageData = nil
+		gifImageData, err = gif.DecodeAll(bytes.NewReader(tmpData))
+		if err != nil {
+			logrus.Error(err)
 			return
 		}
+	}
+	if err != nil {
+		logrus.Error(err)
+		return
 	}
 
 	return
