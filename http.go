@@ -66,7 +66,11 @@ func ImageUploadRequestHandler(c echo.Context) error {
 		return err
 	}
 	defer src.Close()
-	imageData, gifImageData, ext, err := DecodeImageFile(src)
+	//imageData, _, gifImageData, ext, err := DecodeImageFile(src)
+	imageData, orientation, gifImageData, ext, err := DecodeImageFile(src)
+	if orientation != 0 {
+		imageData = RotateImage(imageData, orientation)
+	}
 
 	if err != nil {
 		logrus.Error(err)
@@ -123,7 +127,7 @@ func ForceContentTypeMultipartFormDataMiddleware(handlerFunc echo.HandlerFunc) e
 
 		if !strings.HasPrefix(context.Request().Header.Get("Content-Type"), "multipart/form-data") {
 			logrus.Warn("Content-Type in Request", context.Request().Header)
-			resp := BaseResponse{Message: "Unsupported Content-Type " + context.Request().Header.Get("Content-Type") + ". Please use multipart/form-data."}
+			resp := BaseResponse{Message: "Unsupported Content-Type:" + context.Request().Header.Get("Content-Type") + ". Please use multipart/form-data."}
 			logrus.Error(resp)
 			return context.JSON(400, resp)
 		}

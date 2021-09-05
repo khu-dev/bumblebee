@@ -148,6 +148,18 @@ func (t *Transformer) resizeBenchmarkConcurrent(task *ImageResizeTask) {
 		},
 	}
 }
+//
+//func TestExif(t *testing.T) {
+//	jmp := jp.NewJpegMediaParser()
+//	f, err := os.ReadFile("test/1.png")
+//	assert.NoError(t, err)
+//	intfc, err := jmp.ParseBytes(f)
+//	assert.NoError(t, err)
+//	sl := intfc.(*jp.SegmentList)
+//	rootIb, err := sl.ConstructExifBuilder()
+//	ifd, data, err := ec.Exif()
+//	assert.NoError(t, err)
+//}
 
 //func BenchmarkTransformer_Start(b *testing.B) {
 //	//b.Run("리사이즈에", func(b *testing.B) {

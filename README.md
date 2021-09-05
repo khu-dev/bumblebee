@@ -118,3 +118,10 @@ done
 ```
 
 로컬에서 서버 실행 후 위의 커맨드를 통해 작업을 요청하고 CPU, Memory 사용률을 관찰해본다.
+
+## 이미지 처리 시 Exif Metadata의 Orientation 정보
+
+* Orientation 값에 따른 회전 정보 참고 - https://feel5ny.github.io/2018/08/06/JS_13/
+* Exif 데이터 해석 참고 - https://github.com/dsoprea/go-exif
+  * jpeg의 Exif 데이터 추출 참고 - https://pkg.go.dev/github.com/dsoprea/go-jpeg-image-structure
+  * png의 Exif 데이터 추출 참고 - https://pkg.go.dev/github.com/dsoprea/go-png-image-structure
