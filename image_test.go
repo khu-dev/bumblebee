@@ -27,7 +27,7 @@ func TestDecodeImageFile(t *testing.T) {
 		logrus.Infof("Test Case[%d] - %s", i, tc)
 		data, err := ioutil.ReadFile(tc.filename)
 		assert.NoError(t, err)
-		imageData, gifImageData, ext, err := DecodeImageFile(bytes.NewReader(data))
+		imageData, _, gifImageData, ext, err := DecodeImageFile(bytes.NewReader(data))
 
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expectedExt, ext)

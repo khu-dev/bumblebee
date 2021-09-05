@@ -89,7 +89,7 @@ func DecodeImageFile(reader io.Reader) (imageData image.Image, orientation uint,
 	return
 }
 
-// 참고: https://www.golangprograms.com/how-to-rotate-an-image-in-golang.html
+// 참고: https://feel5ny.github.io/2018/08/06/JS_13/
 func RotateImage(imageData image.Image, exifOrientation uint) image.Image{
 	if exifOrientation != 0 && exifOrientation != 1 {
 		if exifOrientation == 7 || exifOrientation == 8 {
@@ -99,7 +99,7 @@ func RotateImage(imageData image.Image, exifOrientation uint) image.Image{
 		} else if exifOrientation == 5 || exifOrientation == 6 {
 			return imaging.Rotate270(imageData)
 		} else {
-			logrus.Error("Unsupported orientation: orientation=%d", exifOrientation)
+			logrus.Errorf("Unsupported orientation: orientation=%d", exifOrientation)
 		}
 	}
 
