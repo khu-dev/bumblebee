@@ -19,7 +19,6 @@ var (
 	uploadTaskChan    chan *ImageUploadTask
 	uploaderQuit      chan interface{}
 	uploadPathForTest string = "test_data" // 주의. 이 패스는 수행 후 사라짐.
-	bucketName        string = "dev-khumu-disk"
 )
 
 func init() {

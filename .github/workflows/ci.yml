@@ -86,7 +86,7 @@ jobs:
         run: |
           kustomize version
           kustomize edit set image umi0410/bumblebee=umi0410/bumblebee:${{ github.run_id }}
-          
+
       - name: Push to another repository
         uses: cpina/github-action-push-to-another-repository@master
         env:

@@ -13,8 +13,8 @@ storage:
   aws:
     enabled: false
     # S3 bucklet name
-    bucketName: dev-khumu-disk
-    endpoint: "https://drive.khumu.me/"
+    bucketName: khumu-drive-dev
+    endpoint: "https://drive.dev.khumu.me/"
   disk:
     enabled: true
     rootPath: "./"
