@@ -44,8 +44,8 @@ jobs:
 
       - name: Test and Build a binary
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.BUMBLEBEE_S3_UPLOAD_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUMBLEBEE_S3_UPLOAD_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BUMBLEBEE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BUMBLEBEE_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ap-northeast-2
         run: |
           KHUMU_HOME=$(pwd) go test ./... -v
