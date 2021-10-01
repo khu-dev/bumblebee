@@ -14,5 +14,6 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/umi0410/ezconfig v0.0.0-20210507141526-7b88a9928c2c
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 )
